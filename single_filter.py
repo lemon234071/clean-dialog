@@ -57,7 +57,8 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
 
             for utter in utters:
                 utter = utterance_clean(opt, utter, blacklist, dirty_data, time_dict, cut)
-                new_dialog.append(utter)
+                if utter:
+                    new_dialog.append(utter)
 
         if opt.no_name:
             new_dialog = session_level.de_name(new_dialog, blacklist["name"])
@@ -256,4 +257,4 @@ def utterance_clean(opt, utterance, blacklist, dirty_data, time_dict, cut, retur
             word_list = []
             utterance = ""
 
-    return " ".join(word_list) if return_segmented else utterance
+    return " ".join(word_list).strip() if return_segmented else utterance.strip()
