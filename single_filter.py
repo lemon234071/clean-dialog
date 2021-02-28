@@ -57,13 +57,12 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
 
             for utter in utters:
                 utter = utterance_clean(opt, utter, blacklist, dirty_data, time_dict, cut)
-                if utter:
-                    new_dialog.append(utter)
+                new_dialog.append(utter)
 
         if opt.no_name:
             new_dialog = session_level.de_name(new_dialog, blacklist["name"])
 
-        start_idx = 0
+        start_idx = 0 if new_dialog[0] else 1
         for i in range(1, len(new_dialog) + 1):
             if (i == len(new_dialog) or not new_dialog[i]) and len(new_dialog[start_idx: i]) > 1:
                 res.append(new_dialog[start_idx: i])
