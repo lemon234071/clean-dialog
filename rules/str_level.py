@@ -151,7 +151,7 @@ def judge_duplicated_phrase(seq_str, times, length=2):
     """
     count = 0
     n = len(seq_str)
-    for k in range(0, n - (times + 1) * (length + 1)):
+    for k in range(n - (times + 1) * (length + 1)):
         for i in range(times - 1, (n - k) // times + 1):
             a = seq_str[k: k + i]
             j = k + i
@@ -183,10 +183,10 @@ def reduce_duplicated_phrase(seq_str, times=3, length=1):
 def judge_yda_dupl(seq_list):
     word_dict = {}
     for word in seq_list:
-        if word not in word_dict.keys():
-            word_dict[word] = 1
-        else:
+        if word in word_dict:
             word_dict[word] += 1
+        else:
+            word_dict[word] = 1            
     # fitler duplicate
     num_list = list(word_dict.values())
     num_list.sort(reverse=True)
@@ -194,10 +194,9 @@ def judge_yda_dupl(seq_list):
     if len(num_list) <= 1 / 3 * len(seq_list):
         return True
 
-    if 3 < len(num_list) < len(seq_list):
-        if sum(num_list[: 3]) > 0.75 * len(seq_list):
-            return True
-    return False
+    return 3 < len(num_list) < len(seq_list) and sum(
+        num_list[:3]
+    ) > 0.75 * len(seq_list)
 
 
 def deduplicate_chars(seq_str, no_single=False):
