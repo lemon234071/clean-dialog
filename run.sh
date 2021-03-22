@@ -1,1 +1,1 @@
-python3 run_dist.py --raw_dir ./data_toy/raw/ --out_dir ./data_toy/ --utterance_dedup --no_name --split_multi_repost --no_reply_tag --no_hashtag --no_emotion --no_mention --no_duplicated --no_emoji --no_long --bert_clean --no_str_blacklist --no_word_blacklist --use_cleantext_lib
+python3 run_dist.py --raw_dir ./toy_data/raw/ --out_dir ./toy_data/ --utterance_dedup --no_name --split_multi_repost --no_reply_tag --no_hashtag --no_emotion --no_mention --no_duplicated --no_emoji --no_long --bert_clean --no_str_blacklist --no_word_blacklist --use_cleantext_lib
