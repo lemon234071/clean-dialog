@@ -64,9 +64,18 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
 
         start_idx = 0 if new_dialog[0] else 1
         for i in range(1, len(new_dialog) + 1):
-            if (i == len(new_dialog) or not new_dialog[i]) and len(new_dialog[start_idx: i]) > 1:
-                res.append(new_dialog[start_idx: i])
+            if i == len(new_dialog) or not new_dialog[i]:
+                if len(new_dialog[start_idx: i]) > 1:
+                    res.append(new_dialog[start_idx: i])
                 start_idx = i + 1
+        # for i in range(1, len(new_dialog)):
+        #     if not new_dialog[i]:
+        #         if len(new_dialog[start_idx: i]) > 1:
+        #             res.append(new_dialog[start_idx: i])
+        #         start_idx = i + 1
+        #     elif i == len(new_dialog) - 1:
+        #         if len(new_dialog[start_idx:]) > 1:
+        #             res.append(new_dialog[start_idx:])
 
     del data
     gc.collect()
