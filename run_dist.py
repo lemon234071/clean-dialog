@@ -14,7 +14,7 @@ def dataloader(dir_path, batch_size):
     subdirs = [(subdir, os.path.join(dir_path, subdir)) for subdir in os.listdir(dir_path)]
     jsonl_path_list = [(file, subdir_name, os.path.join(subdir, file))
                        for subdir_name, subdir in subdirs
-                       for file in os.listdir(subdir)]
+                       for file in os.listdir(subdir) if file.endswith(".jsonl")]
     for file, subdir_name, path in jsonl_path_list:
         dataset = load_jsonl(path)
         for i in range(0, len(dataset), batch_size):
