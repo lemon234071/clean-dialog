@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 from single_filter import main_filter, add_filter_args
 from data_utils import *
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')  # - %(name)s
 logger = logging.getLogger(__file__)
 
 
