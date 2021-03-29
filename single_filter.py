@@ -45,7 +45,8 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
         # dialog = session_check(opt, dialog)
         if opt.utterance_dedup:
             if len(set(dialog)) < 2:
-                dirty_data["duplicated"]["utterance_level"].add(dialog[0])
+                if len(set(dialog)) > 0:
+                    dirty_data["duplicated"]["utterance_level"].add(dialog[0])
                 continue
 
         new_dialog = []
@@ -55,7 +56,11 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
             else:
                 utters = [dialog[i]]
 
-            for utter in utters:
+            for j, utter in enumerate(utters):
+                if opt.de_toupiao and (j+1) < len(utters):
+                    toupiao = str_level.de_toupiao(utters[j+1])
+                    if toupiao:
+                        continue
                 utter = utterance_clean(opt, utter, blacklist, dirty_data, time_dict, cut)
                 new_dialog.append(utter)
 
@@ -157,6 +162,12 @@ def utterance_clean(opt, utterance, blacklist, dirty_data, time_dict, cut, retur
         utterance = utterance[:utterance.index("¡ 评论")]
         if not utterance:
             dirty_data["other"]["¡ 评论"].add(orig_utter)
+
+    if utterance and opt.de_toupiao:
+        toupiao = str_level.de_toupiao(utterance)
+        if toupiao:
+            dirty_data["other"]["toupiao"].add(orig_utter)
+            utterance = ""
 
     if utterance and opt.no_special_topic:
         special_topic_word = str_level.de_str_blacklist(utterance, blacklist["special_topic"])

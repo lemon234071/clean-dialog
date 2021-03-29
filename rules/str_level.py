@@ -57,6 +57,12 @@ def remove_emoji2(utter):
     return None
 
 
+def de_toupiao(utter):
+    if "我投给了" in utter and "你也快来表态吧~" in utter:
+        return True
+    return False
+
+
 # TODO speed up
 def de_str_blacklist(utter, blacklist):
     for word in blacklist:
@@ -190,8 +196,8 @@ def judge_yda_dupl(seq_list):
         if word in word_dict:
             word_dict[word] += 1
         else:
-            word_dict[word] = 1            
-    # fitler duplicate
+            word_dict[word] = 1
+            # fitler duplicate
     num_list = list(word_dict.values())
     num_list.sort(reverse=True)
 
