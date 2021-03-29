@@ -14,3 +14,9 @@ def de_name(session, name_set):
                 seq.append(word)
         dialog.append(" ".join(seq))
     return dialog
+
+
+def de_short_response(session, min_len=2):
+    while session and len(session[-1].replace(" ", "")) < min_len:
+        session = session[:-1]
+    return session

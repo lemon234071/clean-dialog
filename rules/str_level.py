@@ -57,7 +57,7 @@ def remove_emoji2(utter):
     return None
 
 
-def de_toupiao(utter):
+def no_toupiao(utter):
     if "我投给了" in utter and "你也快来表态吧~" in utter:
         return True
     return False

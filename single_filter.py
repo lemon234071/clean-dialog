@@ -57,8 +57,8 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
                 utters = [dialog[i]]
 
             for j, utter in enumerate(utters):
-                if opt.de_toupiao and (j+1) < len(utters):
-                    toupiao = str_level.de_toupiao(utters[j+1])
+                if opt.no_toupiao and (j+1) < len(utters):
+                    toupiao = str_level.no_toupiao(utters[j+1])
                     if toupiao:
                         continue
                 utter = utterance_clean(opt, utter, blacklist, dirty_data, time_dict, cut)
@@ -70,8 +70,11 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
         start_idx = 0 if new_dialog[0] else 1
         for i in range(1, len(new_dialog) + 1):
             if i == len(new_dialog) or not new_dialog[i]:
-                if len(new_dialog[start_idx: i]) > 1:
-                    res.append(new_dialog[start_idx: i])
+                part_dialog = new_dialog[start_idx: i][:]
+                if opt.de_short_response:
+                    part_dialog = session_level.de_short_response(part_dialog)
+                if len(part_dialog) > 1:
+                    res.append(part_dialog)
                 start_idx = i + 1
         # for i in range(1, len(new_dialog)):
         #     if not new_dialog[i]:
@@ -139,6 +142,7 @@ def add_filter_args(argparser):
     opt.add_argument('--bert_clean', action="store_true")
     opt.add_argument('--use_cleantext_lib', action="store_true")
     opt.add_argument('--no_str_blacklist', action="store_true")
+    opt.add_argument('--no_toupiao', action="store_true")
 
     # words list level
     opt.add_argument('--no_word_blacklist', action="store_true")
@@ -163,8 +167,8 @@ def utterance_clean(opt, utterance, blacklist, dirty_data, time_dict, cut, retur
         if not utterance:
             dirty_data["other"]["¡ 评论"].add(orig_utter)
 
-    if utterance and opt.de_toupiao:
-        toupiao = str_level.de_toupiao(utterance)
+    if utterance and opt.no_toupiao:
+        toupiao = str_level.no_toupiao(utterance)
         if toupiao:
             dirty_data["other"]["toupiao"].add(orig_utter)
             utterance = ""
