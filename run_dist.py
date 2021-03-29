@@ -48,12 +48,12 @@ def main():
     args = parser.parse_args()
 
     logger.info("Preparing")
+    simple_loader = dataloader(args.raw_dir, args.batch_size)
+    blacklists = get_filter_set(args.tool_dir)
+
     after_dist_dir = os.path.join(args.out_dir, "after_dist")
     if not os.path.isdir(after_dist_dir):
         os.mkdir(after_dist_dir)
-
-    simple_loader = dataloader(args.raw_dir, args.batch_size)
-    blacklists = get_filter_set(args.tool_dir)
 
     # single process debug
     # file_id, data = next(simple_loader)
