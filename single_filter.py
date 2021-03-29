@@ -18,105 +18,108 @@ MAX_LEN_STR_BLACKWORD = 110
 
 def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
     out_path = os.path.join(out_dir, file_id + ".jsonl")
-    logger.info("The saved path of data is {}".format(out_path))
+    try:
+        logger.info("The saved path of data is {}".format(out_path))
 
-    if not os.path.exists(os.path.dirname(out_path)):
-        logger.error("{} dost not exist!!!!!!".format(os.path.dirname(out_path)))
-        return
+        if not os.path.exists(os.path.dirname(out_path)):
+            logger.error("{} dost not exist!!!!!!".format(os.path.dirname(out_path)))
+            return
 
-    logger.info("{} start".format(file_id))
-    # data = loader(path)
-    logger.info("Size of this batch : {}".format(len(data)))
+        logger.info("{} start".format(file_id))
+        # data = loader(path)
+        logger.info("Size of this batch : {}, log in {}".format(len(data), file_id))
 
-    dirty_data = {k: collections.defaultdict(set) for k in
-                  ["other", "name", "str_blacklist", "word_blacklist", "not_en", "confused", "generic", "emoji",
-                   "duplicated", "confuse"]}
+        dirty_data = {k: collections.defaultdict(set) for k in
+                      ["other", "name", "str_blacklist", "word_blacklist", "not_en", "confused", "generic", "emoji",
+                       "duplicated", "confuse"]}
 
-    logger.info("Batch sample: {}".format(data[0][0]))
+        logger.info("Batch sample: {}, log in {}".format(data[0][0], file_id))
 
-    time_dict = collections.defaultdict(float)
+        time_dict = collections.defaultdict(float)
 
-    global MAX_LEN_STR_BLACKWORD
-    MAX_LEN_STR_BLACKWORD = max(len(x) for x in blacklist["str_blacklist"]) + 2
+        global MAX_LEN_STR_BLACKWORD
+        MAX_LEN_STR_BLACKWORD = max(len(x) for x in blacklist["str_blacklist"]) + 2
 
-    res = []
-    for dialog in tqdm.tqdm(data, mininterval=1):
-        # session level
-        # dialog = session_check(opt, dialog)
-        if opt.utterance_dedup:
-            if len(set(dialog)) < 2:
-                if len(set(dialog)) > 0:
-                    dirty_data["duplicated"]["utterance_level"].add(dialog[0])
-                continue
+        res = []
+        for dialog in tqdm.tqdm(data, mininterval=1):
+            # session level
+            # dialog = session_check(opt, dialog)
+            if opt.utterance_dedup:
+                if len(set(dialog)) < 2:
+                    if len(set(dialog)) > 0:
+                        dirty_data["duplicated"]["utterance_level"].add(dialog[0])
+                    continue
 
-        new_dialog = []
-        for i in range(len(dialog)):
-            if opt.split_multi_repost:
-                utters = str_level.split_multi_repost(dialog[i])
-            else:
-                utters = [dialog[i]]
+            new_dialog = []
+            for i in range(len(dialog)):
+                if opt.split_multi_repost:
+                    utters = str_level.split_multi_repost(dialog[i])
+                else:
+                    utters = [dialog[i]]
 
-            for j, utter in enumerate(utters):
-                if opt.no_toupiao and (j+1) < len(utters):
-                    toupiao = str_level.no_toupiao(utters[j+1])
-                    if toupiao:
-                        continue
-                utter = utterance_clean(opt, utter, blacklist, dirty_data, time_dict, cut)
-                new_dialog.append(utter)
+                for j, utter in enumerate(utters):
+                    if opt.no_toupiao and (j + 1) < len(utters):
+                        toupiao = str_level.no_toupiao(utters[j + 1])
+                        if toupiao:
+                            continue
+                    utter = utterance_clean(opt, utter, blacklist, dirty_data, time_dict, cut)
+                    new_dialog.append(utter)
 
-        if opt.no_name:
-            new_dialog = session_level.de_name(new_dialog, blacklist["name"])
+            if opt.no_name:
+                new_dialog = session_level.de_name(new_dialog, blacklist["name"])
 
-        start_idx = 0 if new_dialog[0] else 1
-        for i in range(1, len(new_dialog) + 1):
-            if i == len(new_dialog) or not new_dialog[i]:
-                part_dialog = new_dialog[start_idx: i][:]
-                if opt.no_short_response:
-                    part_dialog = session_level.no_short_response(part_dialog)
-                if len(part_dialog) > 1:
-                    res.append(part_dialog)
-                start_idx = i + 1
-        # for i in range(1, len(new_dialog)):
-        #     if not new_dialog[i]:
-        #         if len(new_dialog[start_idx: i]) > 1:
-        #             res.append(new_dialog[start_idx: i])
-        #         start_idx = i + 1
-        #     elif i == len(new_dialog) - 1:
-        #         if len(new_dialog[start_idx:]) > 1:
-        #             res.append(new_dialog[start_idx:])
+            start_idx = 0 if new_dialog[0] else 1
+            for i in range(1, len(new_dialog) + 1):
+                if i == len(new_dialog) or not new_dialog[i]:
+                    part_dialog = new_dialog[start_idx: i][:]
+                    if opt.no_short_response:
+                        part_dialog = session_level.no_short_response(part_dialog)
+                    if len(part_dialog) > 1:
+                        res.append(part_dialog)
+                    start_idx = i + 1
+            # for i in range(1, len(new_dialog)):
+            #     if not new_dialog[i]:
+            #         if len(new_dialog[start_idx: i]) > 1:
+            #             res.append(new_dialog[start_idx: i])
+            #         start_idx = i + 1
+            #     elif i == len(new_dialog) - 1:
+            #         if len(new_dialog[start_idx:]) > 1:
+            #             res.append(new_dialog[start_idx:])
 
-    del data
-    gc.collect()
+        del data
+        gc.collect()
 
-    # data level
-    if opt.de_ad:
-        res = data_level.de_ad(res, dirty_data)
+        # data level
+        if opt.de_ad:
+            res = data_level.de_ad(res, dirty_data)
 
-    if opt.de_generic_dialog:
-        res = data_level.de_generic(res, dirty_data, out_path.replace(".jsonl", "_trigram.jsonl"), 1000)
+        if opt.de_generic_dialog:
+            res = data_level.de_generic(res, dirty_data, out_path.replace(".jsonl", "_trigram.jsonl"), 1000)
 
-    if len(res) > 0:
-        save_jsonl(res, out_path)
+        if len(res) > 0:
+            save_jsonl(res, out_path)
 
-    # save dirty data
-    dirty_dir = os.path.join(out_dir, "dirty_data")
-    if not os.path.isdir(dirty_dir):
-        os.mkdir(dirty_dir)
-    for k, v in dirty_data.items():
-        k_path = os.path.join(dirty_dir, k)
-        if sum(len(subv) for subv in v.values()):
-            if not os.path.isdir(k_path):
-                os.mkdir(k_path)
-            if "blacklist" in k and len(v) > 0:
-                temp_bl = {bk: len(bv) for bk, bv in v.items()}
-                temp_bl = sorted(temp_bl.items(), key=lambda x: x[1], reverse=True)
-                save_json(temp_bl, os.path.join(k_path, "sta_{}.json".format(file_id)))
-                save_json({bk: list(bv) for bk, bv in v.items()}, os.path.join(k_path, "{}.json".format(file_id)))
-            else:
-                for sub_k, sub_v in v.items():
-                    if len(sub_v) > 0:
-                        save_jsonl(sub_v, os.path.join(k_path, "{}_{}.jsonl".format(sub_k, file_id)))
-    logger.info("{}  over, resulting {} dialogs".format(file_id, len(res)))
+        # save dirty data
+        dirty_dir = os.path.join(out_dir, "dirty_data")
+        if not os.path.isdir(dirty_dir):
+            os.mkdir(dirty_dir)
+        for k, v in dirty_data.items():
+            k_path = os.path.join(dirty_dir, k)
+            if sum(len(subv) for subv in v.values()):
+                if not os.path.isdir(k_path):
+                    os.mkdir(k_path)
+                if "blacklist" in k and len(v) > 0:
+                    temp_bl = {bk: len(bv) for bk, bv in v.items()}
+                    temp_bl = sorted(temp_bl.items(), key=lambda x: x[1], reverse=True)
+                    save_json(temp_bl, os.path.join(k_path, "sta_{}.json".format(file_id)))
+                    save_json({bk: list(bv) for bk, bv in v.items()}, os.path.join(k_path, "{}.json".format(file_id)))
+                else:
+                    for sub_k, sub_v in v.items():
+                        if len(sub_v) > 0:
+                            save_jsonl(sub_v, os.path.join(k_path, "{}_{}.jsonl".format(sub_k, file_id)))
+        logger.info("{}  over, resulting {} dialogs".format(file_id, len(res)))
+    except Exception as e:
+        logger.error("Error !!!! : {}, log in {}".format(e, out_path))
     return file_id
 
 
