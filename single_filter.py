@@ -71,8 +71,8 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
         for i in range(1, len(new_dialog) + 1):
             if i == len(new_dialog) or not new_dialog[i]:
                 part_dialog = new_dialog[start_idx: i][:]
-                if opt.de_short_response:
-                    part_dialog = session_level.de_short_response(part_dialog)
+                if opt.no_short_response:
+                    part_dialog = session_level.no_short_response(part_dialog)
                 if len(part_dialog) > 1:
                     res.append(part_dialog)
                 start_idx = i + 1
@@ -143,6 +143,7 @@ def add_filter_args(argparser):
     opt.add_argument('--use_cleantext_lib', action="store_true")
     opt.add_argument('--no_str_blacklist', action="store_true")
     opt.add_argument('--no_toupiao', action="store_true")
+    opt.add_argument('--no_short_response', action="store_true")
 
     # words list level
     opt.add_argument('--no_word_blacklist', action="store_true")
