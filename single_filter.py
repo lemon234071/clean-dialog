@@ -71,11 +71,14 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
             start_idx = 0 if new_dialog[0] else 1
             for i in range(1, len(new_dialog) + 1):
                 if i == len(new_dialog) or not new_dialog[i]:
-                    part_dialog = new_dialog[start_idx: i][:]
                     if opt.no_short_response:
+                        part_dialog = new_dialog[start_idx: i][:]
                         part_dialog = session_level.no_short_response(part_dialog)
-                    if len(part_dialog) > 1:
-                        res.append(part_dialog)
+                        if len(part_dialog) > 1:
+                            res.append(part_dialog)
+                    else:
+                        if len(new_dialog[start_idx: i]) > 1:
+                            res.append(new_dialog[start_idx: i])
                     start_idx = i + 1
             # for i in range(1, len(new_dialog)):
             #     if not new_dialog[i]:

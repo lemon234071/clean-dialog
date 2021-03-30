@@ -58,7 +58,8 @@ def remove_emoji2(utter):
 
 
 def no_toupiao(utter):
-    if "我投给了" in utter and "你也快来表态吧~" in utter:
+    temp = utter.replace(" ", "")
+    if "我投给了" in temp and "你也快来表态吧~" in temp:
         return True
     return False
 
