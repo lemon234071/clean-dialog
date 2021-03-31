@@ -10,29 +10,54 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__file__)
 
 
-def dataloader(dir_path, batch_size):
+def dataloader(dir_path, out_dir, batch_size):
     """Load jsonl data, each line should be a list of dialog: ["你好", "你也好", "哈哈"]"""
+    cleaned_dir = os.path.join(out_dir, "cleaned_data")
+    if not os.path.exists(cleaned_dir):
+        os.mkdir(cleaned_dir)
+
     subdirs = [(subdir, os.path.join(dir_path, subdir)) for subdir in os.listdir(dir_path)]
-    jsonl_path_list = [(file, subdir_name, os.path.join(subdir, file))
-                       for subdir_name, subdir in subdirs
-                       for file in os.listdir(subdir) if file.endswith(".jsonl")]
+    jsonl_path_list = [(file, subdir, os.path.join(subdir_path, file))
+                       for subdir, subdir_path in subdirs
+                       for file in os.listdir(subdir_path) if file.endswith(".jsonl")]
     for file, subdir_name, path in jsonl_path_list:
         dataset = load_jsonl(path)
         for i in range(0, len(dataset), batch_size):
             fid = subdir_name + "_" + file.replace(".jsonl", "") + "_trunc" + str(i)
-            yield fid, dataset[i: i + batch_size]
+            # out
+            out_subdir = os.path.join(cleaned_dir, subdir_name)
+            if not os.path.exists(out_subdir):
+                os.mkdir(out_subdir)
+            out_path = os.path.join(out_subdir, fid + ".jsonl")
+            yield fid, dataset[i: i + batch_size], out_path
 
 
 def get_filter_set(tool_dir):
-    black_str_set = set(load_txt(os.path.join(tool_dir, "black_str_vocab.txt")))
-    black_list_set = set(load_txt(os.path.join(tool_dir, "black_list_vocab.txt")))
-    special_topic_str_set = set(load_txt(os.path.join(tool_dir, "special_topic.txt")))
-    person_name_set = set(load_txt(os.path.join(tool_dir, "person_name.txt")))
+    blacklist = {}
+
+    if os.path.exists(os.path.join(tool_dir, "black_str_vocab.txt")):
+        black_str_set = set(load_txt(os.path.join(tool_dir, "black_str_vocab.txt")))
+        blacklist["str_blacklist"] = black_str_set
+
+    if os.path.exists(os.path.join(tool_dir, "black_list_vocab.txt")):
+        black_list_set = set(load_txt(os.path.join(tool_dir, "black_list_vocab.txt")))
+        blacklist["word_blacklist"] = black_list_set
+
+    if os.path.exists(os.path.join(tool_dir, "special_topic.txt")):
+        special_topic_str_set = set(load_txt(os.path.join(tool_dir, "special_topic.txt")))
+        blacklist["special_topic"] = special_topic_str_set
+
+    if os.path.exists(os.path.join(tool_dir, "person_name.txt")):
+        person_name_set = set(load_txt(os.path.join(tool_dir, "person_name.txt")))
+        blacklist["name"] = person_name_set
+
     en_set = {'l', '.', 'W', 't', 'o', 'z', 'k', 'C', 'B', 'y', '/', 'w', 'a', 's', 'h', 'x', '_', 'n', 'g', 'i',
               'd', 'e'}
+    blacklist["english"] = en_set
+
     confuse_set = set()
-    blacklist = {"name": person_name_set, "str_blacklist": black_str_set, "word_blacklist": black_list_set,
-                 "confuse": confuse_set, "english": en_set, "special_topic": special_topic_str_set}
+    blacklist["confuse"] = confuse_set
+
     return blacklist
 
 
@@ -49,24 +74,20 @@ def main():
     args = parser.parse_args()
 
     logger.info("Preparing")
-    simple_loader = dataloader(args.raw_dir, args.batch_size)
+    simple_loader = dataloader(args.raw_dir, args.out_dir, args.batch_size)
     blacklists = get_filter_set(args.tool_dir)
-
-    after_dist_dir = os.path.join(args.out_dir, "after_dist")
-    if not os.path.isdir(after_dist_dir):
-        os.mkdir(after_dist_dir)
 
     # single process debug
     # file_id, data = next(simple_loader)
-    # file_id, data = next(simple_loader)
-    # main_filter(args, file_id, data, blacklists, after_dist_dir)
+    # file_id, data, outpath = next(simple_loader)
+    # main_filter(args, file_id, data, blacklists, outpath, args.out_dir)
     # exit()
 
     # multi processing
     logger.info("Cleaning start!")
     p = Pool(args.n_p)
-    for file_id, data in simple_loader:
-        p.apply_async(main_filter, args=(args, file_id, data, blacklists, after_dist_dir))
+    for file_id, data, outpath in simple_loader:
+        p.apply_async(main_filter, args=(args, file_id, data, blacklists, outpath, args.out_dir))
     p.close()
     p.join()
     logger.info("Cleaning over!")

@@ -16,8 +16,7 @@ logger = logging.getLogger(__file__)
 MAX_LEN_STR_BLACKWORD = 110
 
 
-def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
-    out_path = os.path.join(out_dir, file_id + ".jsonl")
+def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
     try:
         logger.info("The saved path of data is {}".format(out_path))
 
@@ -47,7 +46,7 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
             if opt.utterance_dedup:
                 if len(set(dialog)) < 2:
                     if len(set(dialog)) > 0:
-                        dirty_data["duplicated"]["utterance_level"].add(dialog[0])
+                        dirty_data["other"]["less_pair"].add(dialog[0])
                     continue
 
             new_dialog = []
