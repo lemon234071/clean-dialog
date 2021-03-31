@@ -275,6 +275,9 @@ def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dic
         utterance = str_level.bert_clean(utterance)
 
     ### word level
+    if not any([opt.no_alpha_noise, opt.check_confuse_word, opt.no_word_blacklist, opt.yda_dedupl]):
+        return utterance.strip()
+
     if cut:
         word_list = list(jieba.cut(utterance))
     else:
