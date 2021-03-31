@@ -5,6 +5,8 @@ import unicodedata
 
 from nltk.corpus import wordnet
 
+SPECIFIC = {"repost", "转发", "repostweibo"}
+
 # 感恩节# 感谢给予自己生命，养育我们长大的父母，他们教会了我们爱、善良和尊严。
 HASHTAG_REGEX = re.compile(r"#.*?# *")
 
@@ -30,11 +32,13 @@ REPLY_MENTION_REGEX = re.compile(r"回复 *@.*?: *")
 
 
 def too_short(utter, length=2):
-    return True if len(utter) < length else False
+    temp = utter.replace(" ", "")
+    return True if len(temp) < length else False
 
 
 def too_long(utter, length=1000):
-    return True if length < len(utter) else False
+    temp = utter.replace(" ", "")
+    return True if length < len(temp) else False
 
 
 def remove_emoji(text):
@@ -59,7 +63,19 @@ def remove_emoji2(utter):
 
 def no_toupiao(utter):
     temp = utter.replace(" ", "")
-    if "我投给了" in temp and "你也快来表态吧~" in temp:
+    if "我投给了" in temp and "你也快来表态吧" in temp:
+        return True
+    return False
+
+
+def no_fenxiang(utter):
+    if utter == "分享图片":
+        return True
+    return False
+
+
+def no_specific_utter(utter):
+    if utter in SPECIFIC:
         return True
     return False
 

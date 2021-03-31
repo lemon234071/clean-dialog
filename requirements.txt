@@ -1,3 +1,4 @@
 clean-text
 emoji
 jieba
+tqdm

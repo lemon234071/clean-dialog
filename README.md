@@ -27,7 +27,9 @@
 以上识别出来的噪音，如可在句中抹去则抹去。  
 如不可抹去则放弃该句子：即，若是单轮对话放弃该对话，若是多轮对话则以该句为分割，切分对话。  
 
-NOTE THAT: 改动某规则的时候注意是否影响到其他规则  
+NOTE THAT: 
+1, 改动某规则的时候注意是否影响到其他规则
+2, 黑名单如人名、特殊话题等可根据需要配置放置到 ./tool_data/下，文件命名可自行配置请参阅。/run_dist.py中dataloader。黑名单可到github上搜寻，如 https://github.com/fighting41love/funNLP 
 
 # Auguments
 

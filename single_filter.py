@@ -57,12 +57,23 @@ def main_filter(opt, file_id, data, blacklist, out_dir, cut=True):
                 else:
                     utters = [dialog[i]]
 
+                last_skip = False
                 for j, utter in enumerate(utters):
+                    tight_utter = utter.replace(" ", "")
+                    if last_skip:
+                        last_skip = False
+                        continue
+                    if opt.no_fenxiang:
+                        fenxiang = str_level.no_fenxiang(tight_utter)
+                        if fenxiang:
+                            dirty_data["other"]["分享图片"].add(utter)
+                            last_skip = True
+                            continue
                     if opt.no_toupiao and (j + 1) < len(utters):
                         toupiao = str_level.no_toupiao(utters[j + 1])
                         if toupiao:
                             continue
-                    utter = utterance_clean(opt, utter, blacklist, dirty_data, time_dict, cut)
+                    utter = utterance_clean(opt, utter, tight_utter, blacklist, dirty_data, time_dict, cut)
                     new_dialog.append(utter)
 
             if opt.no_name:
@@ -150,16 +161,19 @@ def add_filter_args(argparser):
     opt.add_argument('--no_str_blacklist', action="store_true")
     opt.add_argument('--no_toupiao', action="store_true")
     opt.add_argument('--no_short_response', action="store_true")
+    opt.add_argument('--no_fenxiang', action="store_true")
+    opt.add_argument('--no_specific_utter', action="store_true")
 
     # words list level
     opt.add_argument('--no_word_blacklist', action="store_true")
     opt.add_argument('--no_alpha_noise', action="store_true")
     opt.add_argument('--check_confuse_word', action="store_true")
     opt.add_argument('--yda_dedupl', action="store_true")
+    # todo remedy http
 
 
-def utterance_clean(opt, utterance, blacklist, dirty_data, time_dict, cut, return_segmented=True) -> str:
-    orig_utter = utterance
+def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dict, cut, return_segmented=True) -> str:
+    orig_utter = utterance[:]
     utterance = utterance.strip()
 
     utterance = utterance.replace("alink", "")
@@ -180,15 +194,20 @@ def utterance_clean(opt, utterance, blacklist, dirty_data, time_dict, cut, retur
             dirty_data["other"]["toupiao"].add(orig_utter)
             utterance = ""
 
+    if utterance and opt.no_specific_utter:
+        specific_utter = str_level.no_specific_utter(tight_utter)
+        if specific_utter:
+            utterance = ""
+
     if utterance and opt.no_special_topic:
-        special_topic_word = str_level.de_str_blacklist(utterance, blacklist["special_topic"])
+        special_topic_word = str_level.de_str_blacklist(tight_utter, blacklist["special_topic"])
         if special_topic_word:
             dirty_data["special_topic"][special_topic_word].add(orig_utter)
             utterance = ""
 
     if utterance and opt.no_str_blacklist:
         global MAX_LEN_STR_BLACKWORD
-        black_word = str_level.de_str_blacklist2(utterance, blacklist["str_blacklist"], MAX_LEN_STR_BLACKWORD)
+        black_word = str_level.de_str_blacklist2(tight_utter, blacklist["str_blacklist"], MAX_LEN_STR_BLACKWORD)
         if black_word:
             dirty_data["str_blacklist"][black_word].add(orig_utter)
             utterance = ""
