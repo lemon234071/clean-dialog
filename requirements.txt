@@ -2,3 +2,4 @@ clean-text
 emoji
 jieba
 tqdm
+unidecode
