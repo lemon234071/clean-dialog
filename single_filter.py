@@ -162,6 +162,7 @@ def add_filter_args(argparser):
     opt.add_argument('--no_short_response', action="store_true")
     opt.add_argument('--no_fenxiang', action="store_true")
     opt.add_argument('--no_specific_utter', action="store_true")
+    opt.add_argument('--no_weibo_url', action="store_true")
 
     # words list level
     opt.add_argument('--no_word_blacklist', action="store_true")
