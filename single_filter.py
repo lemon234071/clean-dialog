@@ -224,6 +224,7 @@ def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dic
 
     if utterance and opt.no_mention:
         utterance = str_level.COMMON_MENTION_REGEX.sub("", utterance).strip()
+        utterance = str_level.COMMON_MENTION_REGEX2.sub("", utterance).strip()
 
     if utterance and opt.no_repost:
         utterance = str_level.REPPOST_MENTION_REGEX.sub("", utterance).strip()
@@ -257,6 +258,11 @@ def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dic
             replace_with_phone_number="<PHONE>")
         if not utterance:
             dirty_data["other"]["cleantext"].add(orig_utter)
+
+    if utterance and opt.no_weibo_url:
+        utterance = str_level.WEIBO_URL_REGEX.sub("", utterance).strip()
+        if not utterance:
+            dirty_data["other"]["weibo_url"].add(orig_utter)
 
     if utterance and opt.no_short:
         len_flag = str_level.too_short(utterance)

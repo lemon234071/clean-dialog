@@ -23,12 +23,16 @@ WEIBO_EMOJI_REGEX = re.compile(r"[?(?:. ?){1,10} ?]")
 # 一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？
 COMMON_MENTION_REGEX = re.compile(r"(@+)\S+")
 
+COMMON_MENTION_REGEX2 = re.compile(r"(@+)\S+?:")
+
 # TODO ???
 # 一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？
 REPPOST_MENTION_REGEX = re.compile(r"/ ?/? ?@ ?(?:[\w \-] ?){,30}? ?:.+")
 
 # 回复 @Devid: 我会准时到的
 REPLY_MENTION_REGEX = re.compile(r"回复 *@.*?: *")
+
+WEIBO_URL_REGEX = re.compile(r"(?:(?:https?:\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn\/[a-zA-Z0-9]{0,8})")
 
 
 def too_short(utter, length=2):
@@ -268,5 +272,47 @@ if __name__ == '__main__':
     # for i in range(100000):
     #     remove_emoji2(test_text)
     # print(time.time() - s_t)
-    test_text = "哈哈哈哈哈 你好啊 你好啊你好啊你好啊你好啊你好啊 今晚开派对吗？哈哈哈哈 今晚开派对吗？今晚开派对吗？今晚开派对吗？今晚开派对吗？hhhhhhhhh"
-    print(reduce_duplicated_phrase(test_text))
+    # test_text = "哈哈哈哈哈 你好啊 你好啊你好啊你好啊你好啊你好啊 今晚开派对吗？哈哈哈哈 今晚开派对吗？今晚开派对吗？今晚开派对吗？今晚开派对吗？hhhhhhhhh"
+    # print(reduce_duplicated_phrase(test_text))
+
+    URL_REGEX = re.compile(
+        r"(?:^|(?<![\w\/\.]))"
+        # protocol identifier
+        # r"(?:(?:https?|ftp)://)"  <-- alt?
+        r"(?:(?:https?:\/\/|ftp:\/\/|www\d{0,3}\.))"
+        # user:pass authentication
+        r"(?:\S+(?::\S*)?@)?" r"(?:"
+        # IP address exclusion
+        # private & local networks
+        r"(?!(?:10|127)(?:\.\d{1,3}){3})"
+        r"(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})"
+        r"(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})"
+        # IP address dotted notation octets
+        # excludes loopback network 0.0.0.0
+        # excludes reserved space >= 224.0.0.0
+        # excludes network & broadcast addresses
+        # (first & last IP address of each class)
+        r"(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])"
+        r"(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}"
+        r"(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))"
+        r"|"
+        # host name
+        r"(?:(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)"
+        # domain name
+        r"(?:\.(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)*"
+        # TLD identifier
+        r"(?:\.(?:[a-z\\u00a1-\\uffff]{2,}))" r"|" r"(?:(localhost))" r")"
+        # port number
+        r"(?::\d{2,5})?"
+        # resource path
+        r"(?:\/[^\)\]\}\s]*)?",
+        # r"(?:$|(?![\w?!+&\/\)]))",
+        # @jfilter: I removed the line above from the regex because I don't understand what it is used for, maybe it was useful?
+        # But I made sure that it does not include ), ] and } in the URL.
+        flags=re.UNICODE | re.IGNORECASE,
+    )
+    test_text = "https://gist.github.com/dperini/729294 @无所不能http://t.cn/A67y39lF哈哈哈 @无所不能"
+    pat = re.compile(r"(?:(?:https?:\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn\/[a-zA-Z0-9]{0,8})")
+    print(pat.sub("XXX", test_text))
+    # pat2 = URL_REGEX
+    # print(pat2.sub("XXX", test_text))
