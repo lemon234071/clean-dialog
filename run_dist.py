@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from multiprocessing import Pool
 from argparse import ArgumentParser
 
@@ -88,6 +89,7 @@ def main():
     p = Pool(args.n_p)
     for file_id, data, outpath in simple_loader:
         p.apply_async(main_filter, args=(args, file_id, data, blacklists, outpath, args.out_dir))
+    time.sleep(0.1)
     p.close()
     p.join()
     logger.info("Cleaning over!")
