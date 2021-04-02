@@ -260,7 +260,7 @@ def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dic
             dirty_data["other"]["cleantext"].add(orig_utter)
 
     if utterance and opt.no_weibo_url:
-        utterance = str_level.WEIBO_URL_REGEX.sub("", utterance).strip()
+        utterance = str_level.WEIBO_URL_REGEX.sub("<URL>", utterance).strip()
         if not utterance:
             dirty_data["other"]["weibo_url"].add(orig_utter)
 
