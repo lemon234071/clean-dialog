@@ -22,7 +22,8 @@ WEIBO_EMOJI_REGEX = re.compile(r"[?(?:. ?){1,10} ?]")
 # TODO replace the @somebody to NAME1, NAME2 ....???
 # 一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？
 # COMMON_MENTION_REGEX = re.compile(r"(@+)\S+")
-COMMON_MENTION_REGEX = re.compile(r"(@+)(.*?):")
+# COMMON_MENTION_REGEX = re.compile(r"(@+)(.*?):")
+COMMON_MENTION_REGEX = re.compile(r"(@+)(\S+?\s*?): *")
 
 # TODO ???
 # 一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？
@@ -315,12 +316,16 @@ if __name__ == '__main__':
     # print(pat.sub("XXX", test_text))
     # pat2 = URL_REGEX
     # print(pat2.sub("XXX", test_text))
-    test_text = '@优优教程网 :连做法都告诉大家了[偷笑]@优优教程网:hahahhah[偷笑]@优优教程网 :嘻嘻嘻[偷笑]@:asdsada哈哈[偷笑]'
-    pat = re.compile(r"(@+)(.+?):")
-    print(pat.sub("XXX", test_text))
+    # test_text = '@优优教程网 :连做法都告诉大家了[偷笑]@优优教程网:hahahhah[偷笑]@优优教程网 :嘻嘻嘻[偷笑]@:asdsada哈哈[偷笑]'
+    # pat = re.compile(r"(@+)(.+?):")
+    # print(pat.sub("XXX", test_text))
+    #
+    # pats = [HASHTAG_REGEX, EMOTION_REGEX, BRACKETS_REGEX, WEIBO_EMOJI_REGEX, COMMON_MENTION_REGEX,
+    #         REPPOST_MENTION_REGEX, REPLY_MENTION_REGEX, WEIBO_URL_REGEX]
+    # for pat in pats:
+    #     # print(pat)
+    #     print(pat.sub("XXX", test_text))
 
-    pats = [HASHTAG_REGEX, EMOTION_REGEX, BRACKETS_REGEX, WEIBO_EMOJI_REGEX, COMMON_MENTION_REGEX,
-            REPPOST_MENTION_REGEX, REPLY_MENTION_REGEX, WEIBO_URL_REGEX]
-    for pat in pats:
-        # print(pat)
-        print(pat.sub("XXX", test_text))
+    test_text = "一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？@优优教程网 :连做法都告诉大家了[偷笑]@优优教程网:hahahhah[偷笑]@优优教程网 :嘻嘻嘻[偷笑]@:asdsada哈哈[偷笑]"
+    pat = re.compile(r"(@+)(\S+?\s*?): *")
+    print(pat.sub("XXX", test_text))
