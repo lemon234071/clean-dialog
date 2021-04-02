@@ -220,12 +220,11 @@ def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dic
     if utterance and opt.no_hashtag:
         utterance = str_level.HASHTAG_REGEX.sub("", utterance).strip()
 
-    if utterance and opt.no_emotion:
-        utterance = str_level.EMOTION_REGEX.sub("", utterance).strip()
-
     if utterance and opt.no_mention:
         utterance = str_level.COMMON_MENTION_REGEX.sub("", utterance).strip()
-        utterance = str_level.COMMON_MENTION_REGEX2.sub("", utterance).strip()
+
+    if utterance and opt.no_emotion:
+        utterance = str_level.EMOTION_REGEX.sub("", utterance).strip()
 
     if utterance and opt.no_repost:
         utterance = str_level.REPPOST_MENTION_REGEX.sub("", utterance).strip()
