@@ -34,6 +34,8 @@ REPLY_MENTION_REGEX = re.compile(r"回复 *@.*?: *")
 
 WEIBO_URL_REGEX = re.compile(r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn\/[a-zA-Z0-9]{0,8})")
 
+ZHIHU_SHOW_ALL_REGEX = re.compile(r"...显示全部\s*")
+
 
 def too_short(utter, length=2):
     temp = utter.replace(" ", "")

@@ -89,7 +89,8 @@ def main():
     p = Pool(args.n_p)
     for file_id, data, outpath in simple_loader:
         p.apply_async(main_filter, args=(args, file_id, data, blacklists, outpath, args.out_dir))
-    time.sleep(0.1)
+        time.sleep(0.01)
+    time.sleep(0.01)
     p.close()
     p.join()
     logger.info("Cleaning over!")

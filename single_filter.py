@@ -14,6 +14,8 @@ from rules import str_level, session_level, data_level
 logger = logging.getLogger(__file__)
 
 MAX_LEN_STR_BLACKWORD = 110
+SHOWALL = ["zhihu"]
+SPECIAL_LISTS = ["<EMAIL>", "<PHONE>"]
 
 
 def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
@@ -72,7 +74,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
                         toupiao = str_level.no_toupiao(utters[j + 1])
                         if toupiao:
                             continue
-                    utter = utterance_clean(opt, utter, tight_utter, blacklist, dirty_data, time_dict, cut)
+                    utter = utterance_clean(opt, file_id, utter, tight_utter, blacklist, dirty_data, time_dict, cut)
                     new_dialog.append(utter)
 
             if opt.no_name:
@@ -163,6 +165,7 @@ def add_filter_args(argparser):
     opt.add_argument('--no_fenxiang', action="store_true")
     opt.add_argument('--no_specific_utter', action="store_true")
     opt.add_argument('--no_weibo_url', action="store_true")
+    opt.add_argument('--no_showall', action="store_true")
 
     # words list level
     opt.add_argument('--no_word_blacklist', action="store_true")
@@ -172,7 +175,8 @@ def add_filter_args(argparser):
     # todo remedy http
 
 
-def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dict, cut, return_segmented=True) -> str:
+def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data, time_dict, cut,
+                    return_segmented=True) -> str:
     orig_utter = utterance[:]
     utterance = utterance.strip()
 
@@ -234,6 +238,11 @@ def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dic
         if not utterance:
             dirty_data["emoji"]["weibo_emoji"].add(orig_utter)
 
+    if utterance and opt.no_showall and any([x for x in SHOWALL if x in file_id]):
+        utterance = str_level.ZHIHU_SHOW_ALL_REGEX.sub("", utterance).strip()
+        if not utterance:
+            dirty_data["other"]["showall"].add(orig_utter)
+
     if utterance and opt.no_duplicated:
         utterance = str_level.reduce_duplicated_phrase(utterance)
 
@@ -253,14 +262,14 @@ def utterance_clean(opt, utterance, tight_utter, blacklist, dirty_data, time_dic
             no_urls=True,
             no_emails=True,
             no_phone_numbers=True,
-            replace_with_url="<URL>",
+            replace_with_url=" ",
             replace_with_email="<EMAIL>",
             replace_with_phone_number="<PHONE>")
         if not utterance:
             dirty_data["other"]["cleantext"].add(orig_utter)
 
     if utterance and opt.no_weibo_url:
-        utterance = str_level.WEIBO_URL_REGEX.sub("<URL>", utterance).strip()
+        utterance = str_level.WEIBO_URL_REGEX.sub(" ", utterance).strip()
         if not utterance:
             dirty_data["other"]["weibo_url"].add(orig_utter)
 
