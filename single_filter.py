@@ -169,6 +169,7 @@ def add_filter_args(argparser):
     opt.add_argument('--no_weibo_url', action="store_true")
     opt.add_argument('--no_url', action="store_true")
     opt.add_argument('--not_mention', action="store_true")
+    opt.add_argument('--no_angle', action="store_true")
 
     # special files
     opt.add_argument('--no_showall', action="store_true")
