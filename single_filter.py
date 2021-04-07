@@ -15,6 +15,7 @@ logger = logging.getLogger(__file__)
 
 MAX_LEN_STR_BLACKWORD = 110
 SHOWALL = ["zhihu"]
+BRACKET = ["weibo_tang"]
 SPECIAL_LISTS = ["<EMAIL>", "<PHONE>"]
 
 
@@ -151,7 +152,6 @@ def add_filter_args(argparser):
     opt.add_argument('--no_emotion', action="store_true")
     opt.add_argument('--no_mention', action="store_true")
     opt.add_argument('--no_repost', action="store_true")
-    opt.add_argument('--no_brackets', action="store_true")
     opt.add_argument('--no_duplicated', action="store_true")
     opt.add_argument('--no_emoji', action="store_true")
     opt.add_argument('--no_short', action="store_true")
@@ -164,8 +164,15 @@ def add_filter_args(argparser):
     opt.add_argument('--no_short_response', action="store_true")
     opt.add_argument('--no_fenxiang', action="store_true")
     opt.add_argument('--no_specific_utter', action="store_true")
+    opt.add_argument('--contain_zh', action="store_true")
+    opt.add_argument('--no_single_repost_mention', action="store_true")
     opt.add_argument('--no_weibo_url', action="store_true")
+    opt.add_argument('--no_url', action="store_true")
+    opt.add_argument('--not_mention', action="store_true")
+
+    # special files
     opt.add_argument('--no_showall', action="store_true")
+    opt.add_argument('--no_brackets', action="store_true")
 
     # words list level
     opt.add_argument('--no_word_blacklist', action="store_true")
@@ -221,22 +228,47 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         if not utterance:
             dirty_data["other"]["no_reply_tag"].add(orig_utter)
 
+    # regex
+    if utterance and opt.no_angle:
+        utterance = str_level.ANGLE_REGEX.sub("", utterance).strip()
+        if not utterance:
+            dirty_data["other"]["angle"].add(orig_utter)
+
+    if utterance and opt.no_url:
+        utterance = str_level.URL_REGEX.sub(" ", utterance).strip()
+        if not utterance:
+            dirty_data["other"]["url"].add(orig_utter)
+
+    if utterance and opt.no_weibo_url:
+        utterance = str_level.WEIBO_URL_REGEX.sub(" ", utterance).strip()
+        if not utterance:
+            dirty_data["other"]["weibo_url"].add(orig_utter)
+
+    if utterance and opt.no_brackets and any([x for x in BRACKET if x in file_id]):
+        utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
+        if not utterance:
+            dirty_data["emoji"]["weibo_emoji"].add(orig_utter)
+
     if utterance and opt.no_hashtag:
         utterance = str_level.HASHTAG_REGEX.sub("", utterance).strip()
-
-    if utterance and opt.no_mention:
-        utterance = str_level.COMMON_MENTION_REGEX.sub("", utterance).strip()
 
     if utterance and opt.no_emotion:
         utterance = str_level.EMOTION_REGEX.sub("", utterance).strip()
 
+    if utterance and opt.not_mention:
+        if str_level.contain_at(utterance):
+            dirty_data["other"]["mention"].add(orig_utter)
+            utterance = ""
+
+    if utterance and opt.no_mention:
+        # utterance = str_level.COMMON_MENTION_REGEX.sub("", utterance).strip()
+        utterance = str_level.no_at(utterance).strip()
+
+    if utterance and opt.no_single_repost_mention:
+        utterance = str_level.SINGLE_REPPOST_MENTION_REGEX.sub("", utterance).strip()
+
     if utterance and opt.no_repost:
         utterance = str_level.REPPOST_MENTION_REGEX.sub("", utterance).strip()
-
-    if utterance and opt.no_brackets:
-        utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
-        if not utterance:
-            dirty_data["emoji"]["weibo_emoji"].add(orig_utter)
 
     if utterance and opt.no_showall and any([x for x in SHOWALL if x in file_id]):
         utterance = str_level.ZHIHU_SHOW_ALL_REGEX.sub("", utterance).strip()
@@ -259,19 +291,14 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             to_ascii=False,
             normalize_whitespace=True,
             no_line_breaks=True,
-            no_urls=True,
+            no_urls=False,
             no_emails=True,
             no_phone_numbers=True,
             replace_with_url=" ",
-            replace_with_email="<EMAIL>",
-            replace_with_phone_number="<PHONE>")
+            replace_with_email="</EMAIL>",
+            replace_with_phone_number="</PHONE>")
         if not utterance:
             dirty_data["other"]["cleantext"].add(orig_utter)
-
-    if utterance and opt.no_weibo_url:
-        utterance = str_level.WEIBO_URL_REGEX.sub(" ", utterance).strip()
-        if not utterance:
-            dirty_data["other"]["weibo_url"].add(orig_utter)
 
     if utterance and opt.no_short:
         len_flag = str_level.too_short(utterance)
@@ -287,6 +314,10 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     if utterance and opt.bert_clean:
         utterance = str_level.bert_clean(utterance)
+
+    if utterance and opt.contain_zh:
+        if not str_level.contains_Chinese(utterance):
+            utterance = ""
 
     ### word level
     if not any([opt.no_alpha_noise, opt.check_confuse_word, opt.no_word_blacklist, opt.yda_dedupl]):

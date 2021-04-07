@@ -2,6 +2,7 @@ import os
 import json
 import tqdm
 import sys
+import time
 import re
 from multiprocessing import Pool
 
@@ -16,15 +17,55 @@ def save_jsonl(data, path):
         f.write("\n".join(json.dumps(line, ensure_ascii=False) for line in data))
 
 
-def seq_clean(seq, zhihu=False):
-    seq = seq.replace("</title>", " ")
-    seq = seq.replace("</tle>", " ")
-    if zhihu:
+def no_at(seq, tail_length=30):
+    temp_pat = re.compile(r"(@+)\S{,30} ")
+    seq = temp_pat.sub("", seq)
+    r_at_idx = seq.rfind("@")
+    if len(seq[r_at_idx:]) < tail_length:
+        seq = seq[:r_at_idx]
+    return seq
+
+
+def is_chinese_char(cp):
+    """Checks whether CP is the codepoint of a CJK character."""
+    # This defines a "chinese character" as anything in the CJK Unicode block:
+    #   https://en.wikipedia.org/wiki/CJK_Unified_Ideographs_(Unicode_block)
+    #
+    # Note that the CJK Unicode block is NOT all Japanese and Korean characters,
+    # despite its name. The modern Korean Hangul alphabet is a different block,
+    # as is Japanese Hiragana and Katakana. Those alphabets are used to write
+    # space-separated words, so they are not treated specially and handled
+    # like the all of the other languages.
+    if (
+            (cp >= 0x4E00 and cp <= 0x9FFF)
+            or (cp >= 0x3400 and cp <= 0x4DBF)  #
+            or (cp >= 0x20000 and cp <= 0x2A6DF)  #
+            or (cp >= 0x2A700 and cp <= 0x2B73F)  #
+            or (cp >= 0x2B740 and cp <= 0x2B81F)  #
+            or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
+            or (cp >= 0xF900 and cp <= 0xFAFF)
+            or (cp >= 0x2F800 and cp <= 0x2FA1F)  #
+    ):  #
+        return True
+
+    return False
+
+
+def contains_Chinese(seq):
+    for char in seq:
+        cp = ord(char)
+        if is_chinese_char(cp):
+            return True
+    return False
+
+
+def seq_clean(seq, data_type="none"):
+    if data_type == "zhihu":
         pat = re.compile(r"…* *显示全部\s*")
         seq = pat.sub("", seq)
-    # seq = seq.replace("...显示全部", "")
-    seq = seq.replace("<URL>", "")
-    seq = seq.replace("<url>", "")
+    elif data_type == "weibo_tang":
+        pat = re.compile(r"\[.*?\] *")
+        seq = pat.sub("", seq)
     return seq
 
 
@@ -37,8 +78,16 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
         for dialog in tqdm.tqdm(data):
             new_dialog = []
             for seq in dialog:
+
                 if extra_func:
-                    seq = seq_clean(seq, ("zhihu" in path))
+                    if "zhihu" in path:
+                        data_type = "zhihu"
+                    elif "weibo_tang" in path:
+                        data_type = "weibo_tang"
+                    else:
+                        data_type = "none"
+                    seq = seq_clean(seq, data_type)
+
                 length = len(seq.replace(" ", ""))
                 if length > max_length or length < 1:
                     if len(new_dialog) > 1:
@@ -81,6 +130,8 @@ def main(indir, outdir, extra_func=False):
         if not os.path.exists(outsubdir):
             os.makedirs(outsubdir)
         p.apply_async(single_func, args=(path, outpath, extra_func))
+        time.sleep(0.01)
+    time.sleep(0.01)
     p.close()
     p.join()
     print("over")

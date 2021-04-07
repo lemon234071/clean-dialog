@@ -14,16 +14,40 @@ EMOTION_REGEX = re.compile(r":.*?: *")
 
 BRACKETS_REGEX = re.compile(r"\[.*?\] *")
 
+ANGLE_REGEX = re.compile(r"<[^\u4e00-\u9fa5]*?>")
+
 # TODO ???
 # 当小猫用他特殊的方式安慰你的时候，再坚硬的心也会被融化。[happy][happy] ˆ_ˆ ˆ_ˆ
 WEIBO_EMOJI_REGEX = re.compile(r"[?(?:. ?){1,10} ?]")
+
+
 # r"\[?(?:. ?){1,10} ?\]"
 
 # TODO replace the @somebody to NAME1, NAME2 ....???
 # 一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？
 # COMMON_MENTION_REGEX = re.compile(r"(@+)\S+")
 # COMMON_MENTION_REGEX = re.compile(r"(@+)(.*?):")
-COMMON_MENTION_REGEX = re.compile(r"(@+)(\S+?\s*?): *")
+# COMMON_MENTION_REGEX = re.compile(r"(@+)(\S*?\s*?): *")
+def no_at(seq, tail_length=30):
+    temp_pat = re.compile(r"(@+)\S{,30} ")
+    seq = temp_pat.sub("", seq)
+    r_at_idx = seq.rfind("@")
+    if len(seq[r_at_idx:]) < tail_length:
+        seq = seq[:r_at_idx]
+    return seq
+
+
+def contain_at(seq, tail_length=30):
+    flag = re.match(r"(@+)\S{,30} ", seq)
+    if flag is not None:
+        return True
+    r_at_idx = seq.rfind("@")
+    if len(seq[r_at_idx:]) < tail_length:
+        return True
+    return False
+
+
+SINGLE_REPPOST_MENTION_REGEX = re.compile(r"(@+)(\S*?\s*?): *")
 
 # TODO ???
 # 一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？
@@ -32,9 +56,50 @@ REPPOST_MENTION_REGEX = re.compile(r"/ ?/? ?@ ?(?:[\w \-] ?){,30}? ?:.+")
 # 回复 @Devid: 我会准时到的
 REPLY_MENTION_REGEX = re.compile(r"回复 *@.*?: *")
 
-WEIBO_URL_REGEX = re.compile(r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn\/[a-zA-Z0-9]{0,8})")
+ZHIHU_SHOW_ALL_REGEX = re.compile(r"…* *显示全部\s*")
 
-ZHIHU_SHOW_ALL_REGEX = re.compile(r"...显示全部\s*")
+URL_REGEX = re.compile(
+    r"(?:^|(?<![A-Za-z0-9\/\.]))"
+    # protocol identifier
+    # r"(?:(?:https?|ftp)://)"  <-- alt?
+    r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.))"
+    # user:pass authentication
+    r"(?:\S+(?::\S*)?@)?" r"(?:"
+    # IP address exclusion
+    # private & local networks
+    r"(?!(?:10|127)(?:\.\d{1,3}){3})"
+    r"(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})"
+    r"(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})"
+    # IP address dotted notation octets
+    # excludes loopback network 0.0.0.0
+    # excludes reserved space >= 224.0.0.0
+    # excludes network & broadcast addresses
+    # (first & last IP address of each class)
+    r"(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])"
+    r"(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}"
+    r"(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))"
+    r"|"
+    # host name
+    r"(?:(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)"
+    # domain name
+    # r"(?:\.(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)*"
+    r"(?:\.(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)*"
+    # TLD identifier
+    r"(?:\.(?:[a-z\\u00a1-\\uffff]{2,}))"
+    r"|"
+    r"(?:(localhost))"
+    r")"
+    # port number
+    r"(?::\d{2,5})?"
+    # resource path
+    r"(?:\/[^\)\]\}\s\u4e00-\u9fa5]*)?",
+    # r"(?:$|(?![\w?!+&\/\)]))",
+    # @jfilter: I removed the line above from the regex because I don't understand what it is used for, maybe it was useful?
+    # But I made sure that it does not include ), ] and } in the URL.
+    flags=re.UNICODE | re.IGNORECASE,
+)
+
+WEIBO_URL_REGEX = re.compile(r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn?(\/[a-zA-Z0-9]{0,8})?)")
 
 
 def too_short(utter, length=2):
@@ -125,6 +190,39 @@ def not_en(word_list, en_set):
                 if word not in en_set:
                     return word
     return None
+
+
+def is_chinese_char(cp):
+    """Checks whether CP is the codepoint of a CJK character."""
+    # This defines a "chinese character" as anything in the CJK Unicode block:
+    #   https://en.wikipedia.org/wiki/CJK_Unified_Ideographs_(Unicode_block)
+    #
+    # Note that the CJK Unicode block is NOT all Japanese and Korean characters,
+    # despite its name. The modern Korean Hangul alphabet is a different block,
+    # as is Japanese Hiragana and Katakana. Those alphabets are used to write
+    # space-separated words, so they are not treated specially and handled
+    # like the all of the other languages.
+    if (
+            (cp >= 0x4E00 and cp <= 0x9FFF)
+            or (cp >= 0x3400 and cp <= 0x4DBF)  #
+            or (cp >= 0x20000 and cp <= 0x2A6DF)  #
+            or (cp >= 0x2A700 and cp <= 0x2B73F)  #
+            or (cp >= 0x2B740 and cp <= 0x2B81F)  #
+            or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
+            or (cp >= 0xF900 and cp <= 0xFAFF)
+            or (cp >= 0x2F800 and cp <= 0x2FA1F)  #
+    ):  #
+        return True
+
+    return False
+
+
+def contains_Chinese(seq):
+    for char in seq:
+        cp = ord(char)
+        if is_chinese_char(cp):
+            return True
+    return False
 
 
 def bert_clean(text):
@@ -264,70 +362,11 @@ def deduplicate_chars(seq_str, no_single=False):
 # DUPLICATE_WORDS_REGEX = re.compile(r"(.+?(?P<item>\S)(?:\s*(?P=item)))(?:\s*(?P=item)){2,}")
 
 if __name__ == '__main__':
-    # print("Testing the RegEx")
-    # test_text = "一起来吗？@Cindy //@Bob: 算我一个//@Amy:今晚开派对吗？"
-    # pat = re.compile(r"/ ?/? ?@ ?(?:[\w \-] ?){,30}? ?:.+")
-    # print(pat.sub("XXX", test_text))
-    #
-    # test_text = "🤔 🙈 me, se 😌 ds 💕👭👙 hello 👩🏾‍🎓 emoji hello 👨‍👩‍👦‍👦 how are 😊 you today🙅🏽🙅🏽"
-    # s_t = time.time()
-    # for i in range(100000):
-    #     remove_emoji2(test_text)
-    # print(time.time() - s_t)
-    # test_text = "哈哈哈哈哈 你好啊 你好啊你好啊你好啊你好啊你好啊 今晚开派对吗？哈哈哈哈 今晚开派对吗？今晚开派对吗？今晚开派对吗？今晚开派对吗？hhhhhhhhh"
-    # print(reduce_duplicated_phrase(test_text))
-    #
-    # URL_REGEX = re.compile(
-    #     r"(?:^|(?<![\w\/\.]))"
-    #     # protocol identifier
-    #     # r"(?:(?:https?|ftp)://)"  <-- alt?
-    #     r"(?:(?:https?:\/\/|ftp:\/\/|www\d{0,3}\.))"
-    #     # user:pass authentication
-    #     r"(?:\S+(?::\S*)?@)?" r"(?:"
-    #     # IP address exclusion
-    #     # private & local networks
-    #     r"(?!(?:10|127)(?:\.\d{1,3}){3})"
-    #     r"(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})"
-    #     r"(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})"
-    #     # IP address dotted notation octets
-    #     # excludes loopback network 0.0.0.0
-    #     # excludes reserved space >= 224.0.0.0
-    #     # excludes network & broadcast addresses
-    #     # (first & last IP address of each class)
-    #     r"(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])"
-    #     r"(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}"
-    #     r"(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))"
-    #     r"|"
-    #     # host name
-    #     r"(?:(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)"
-    #     # domain name
-    #     r"(?:\.(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)*"
-    #     # TLD identifier
-    #     r"(?:\.(?:[a-z\\u00a1-\\uffff]{2,}))" r"|" r"(?:(localhost))" r")"
-    #     # port number
-    #     r"(?::\d{2,5})?"
-    #     # resource path
-    #     r"(?:\/[^\)\]\}\s]*)?",
-    #     # r"(?:$|(?![\w?!+&\/\)]))",
-    #     # @jfilter: I removed the line above from the regex because I don't understand what it is used for, maybe it was useful?
-    #     # But I made sure that it does not include ), ] and } in the URL.
-    #     flags=re.UNICODE | re.IGNORECASE,
-    # )
-    # test_text = "郭麒麟打卡,且听他分享防疫小知识。 http//t.cn/a67ov8bt"
-    # pat = re.compile(r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn\/[a-zA-Z0-9]{0,8})")
-    # print(pat.sub("XXX", test_text))
-    # pat2 = URL_REGEX
-    # print(pat2.sub("XXX", test_text))
-    # test_text = '@优优教程网 :连做法都告诉大家了[偷笑]@优优教程网:hahahhah[偷笑]@优优教程网 :嘻嘻嘻[偷笑]@:asdsada哈哈[偷笑]'
-    # pat = re.compile(r"(@+)(.+?):")
-    # print(pat.sub("XXX", test_text))
-    #
-    # pats = [HASHTAG_REGEX, EMOTION_REGEX, BRACKETS_REGEX, WEIBO_EMOJI_REGEX, COMMON_MENTION_REGEX,
-    #         REPPOST_MENTION_REGEX, REPLY_MENTION_REGEX, WEIBO_URL_REGEX]
-    # for pat in pats:
-    #     # print(pat)
-    #     print(pat.sub("XXX", test_text))
+    print("Testing the RegEx")
 
-    test_text = "一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？@优优教程网 :连做法都告诉大家了[偷笑]@优优教程网:hahahhah[偷笑]@优优教程网 :嘻嘻嘻[偷笑]@:asdsada哈哈[偷笑]"
-    pat = re.compile(r"(@+)(\S+?\s*?): *")
-    print(pat.sub("XXX", test_text))
+    test_text = '< ( ̄ ˇ ̄ ) > < ( ## ) > < 97 | | 97 > < 176 > < u > < ( ° ー ° 〃 ) > < 5 > < / h1 > < 23 > < t > < img src = " < url > < a tnk " href = " < url > < ) ( 〃 > < ) ~ ★ ~ ☆ ~ ★ ~ ☆ ~ ★ gakkiiloveyou ! ~ ★ ~ ☆ ~ ★ ~ ☆ ~ ★ ~ ( > < ( > < html > < ( ̄ 3 ̄ ) > < / p > < img pic _ type = " 1 " src = " < url > < --- > < 2015.11 . 03 > < ( / ▽ \\ = ) > < i , robot > < s > < 16 > < ) < url > < h1 > < ๑ ) ( ๑ > < / s > < 22 > < 007 > < イ グ ジ ス ト > < 144xxx > < img src = < url > < girlsaward 2016 a / w > < 3.0 > < ? b > < ( ̄ ) ̄ ) > < < awaydays > < healer > < cxs > < mama > < ___ ● > < before > < email > < %% > < 9 > < ( = ̄ _ ̄ | | | ) > < dune > < p > < 18 > < 0f $ > < 12 > < 2015.11 . 05 > < < う わ き な シ ン プ ル ス マ イ ル > < women > < ~ ~ ~ > < colors > < / iframe > < ( ̄ ▽ ̄ ) > < * ) ) > < desperado > < title > < phone > < / br > < cosplay > < ( ^ - ^ ) > < ○ > < ) ~ ~ ~ ~ ~ ~ ( > < ( * φ ω φ * ) > < < shark > < 20 > < ) ( > < ( ` ▽ ′ ) > < ( ï ¿ £ 3 ï ¿ £ ) > < 4 > < 13 > < wow > < piece > < mbmd > < champions > < ( · ω · ` ) > < ~ < < 117274117 > < = = > < 2012.1 . 09.02 : 21 > < 1 > < 7 > < doctors > < 49 > < < > < always there > < ( - ^ - ) > < ( " " " o " " " > < 50 > < someday > < 53 > < 8 > < br / > < fairy tale > < ● > < if > < / html > < = 1 ) , rnd ( 0 , a * b ) ( a * b > < ) } } { { ( > < < doctors > < 3 > < chapter.05 > < ) ~ ( > < 。 < url > < m q > < ‖ ‖ < url > < ~ > < / sup > < * * > < < phone > < 14 > < ` \' - , _ ) \' ._ ) , ___ .- ; \' ` " -. ` \\ _..._ / ` . ` , \\ / .- \' \' , / ( ) ( ) \\ ` \' ._ \\ / ( ) . ( | > < gosick > < \' ) ) ) > < 。 > < < br > < ( - ︿ - ) > < anaesthesia > < / u > < ) — — ( > < ( = ~ = ) > < < semini > < ) o ~ ~ o ( > < ) ~ ~ ( > < 52l > < | ; , __. ; \' -. \' -. | , \\ , \\ ` > < bleach > < ( 。 _ 。 ) > < < < > < ( __ __ ) > < br > < \' . < ` \' - , _ ) \' ._ ) , ___ .- ; \' ` " -. ` \\ _..._ / ` . ` , \\ / .- \' \' , / ( ) ( ) \\ ` \' ._ \\ / ( ) . ( | > < 。 = ) > < < url > < a href = " < url > < 2015.11 . 02 > < 19 > < 2 > < 17 > < 12 / 2 > < = 0.5 ) , 0.5 ( a > < 2012.1 . 09.01 : 46 > < / title > < ๑ ) < url > < % % > < ( _ _ ) > < op > < / a > < ( / \\ ) _ ( ) _ ( _ > < ) ☆ < url > < ) < ) ( 〃 > < < 1030 > < b > < gb12142 - 2007 > < 〜 > < 2015.11 . 04 > < \\ x \\ / > < v5.0 . 201401 > < 。 ) ( > < ( ̄ ︶ ̄ ) > < ( __ ) > < falling slowly > < 21 > < / span > < ) o ゜ < url > < ~ ~ > < … … … > < い ら な い > < circus > < sup > < < monster > < _ > < w . k . > < / body > < 11 > < url > < 3 < > < < < < < < < < < æ ° ´ æ ° ´ æ ° ´ > < t2 b . t1 > < 6 > < / b > < \\ x / > < bandage > < > < img >'
+
+    pat2 = re.compile(u"<[^\\u4e00-\\u9fa5]*?>")
+    print(pat2.sub("XXX", test_text))
+
+    # expected: 郭麒麟打卡,且听他分享防疫小知识XXX哈哈XXX哈哈哈哈XXX
