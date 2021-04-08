@@ -1,6 +1,8 @@
 import os
 import logging
 import time
+import tqdm
+import random
 from multiprocessing import Pool
 from argparse import ArgumentParser
 
@@ -21,6 +23,7 @@ def dataloader(dir_path, out_dir, batch_size):
     jsonl_path_list = [(file, subdir, os.path.join(subdir_path, file))
                        for subdir, subdir_path in subdirs
                        for file in os.listdir(subdir_path) if file.endswith(".jsonl")]
+    random.shuffle(jsonl_path_list)
     for file, subdir_name, path in jsonl_path_list:
         dataset = load_jsonl(path)
         for i in range(0, len(dataset), batch_size):
@@ -73,6 +76,8 @@ def main():
     parser.add_argument("--raw_dir", type=str, default="./data/raw/", help="Dir of the raw dataset.")
     add_filter_args(parser)
     args = parser.parse_args()
+    logger.info(args)
+    p = Pool(args.n_p)
 
     logger.info("Preparing")
     simple_loader = dataloader(args.raw_dir, args.out_dir, args.batch_size)
@@ -86,8 +91,7 @@ def main():
 
     # multi processing
     logger.info("Cleaning start!")
-    p = Pool(args.n_p)
-    for file_id, data, outpath in simple_loader:
+    for file_id, data, outpath in tqdm.tqdm(simple_loader):
         p.apply_async(main_filter, args=(args, file_id, data, blacklists, outpath, args.out_dir))
         time.sleep(0.01)
     time.sleep(0.01)

@@ -27,7 +27,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
             logger.error("{} dost not exist!!!!!!".format(os.path.dirname(out_path)))
             return
 
-        logger.info("{} start".format(file_id))
+        logger.info("Start : {}".format(file_id))
         # data = loader(path)
         logger.info("Size of this batch : {}, log in {}".format(len(data), file_id))
 
@@ -43,7 +43,8 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
         MAX_LEN_STR_BLACKWORD = max(len(x) for x in blacklist["str_blacklist"]) + 2
 
         res = []
-        for dialog in tqdm.tqdm(data, mininterval=1):
+        while len(data):
+            dialog = data.pop(0)
             # session level
             # dialog = session_check(opt, dialog)
             if opt.utterance_dedup:
@@ -114,6 +115,8 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
 
         if len(res) > 0:
             save_jsonl(res, out_path)
+            del res
+            gc.collect()
 
         # save dirty data
         dirty_dir = os.path.join(out_dir, "dirty_data")
@@ -133,6 +136,8 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
                     for sub_k, sub_v in v.items():
                         if len(sub_v) > 0:
                             save_jsonl(sub_v, os.path.join(k_path, "{}_{}.jsonl".format(sub_k, file_id)))
+        del dirty_data
+        gc.collect()
         logger.info("{}  over, resulting {} dialogs".format(file_id, len(res)))
     except Exception as e:
         logger.error("Error !!!! : {}, log in {}".format(e, out_path))
