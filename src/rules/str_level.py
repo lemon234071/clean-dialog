@@ -38,7 +38,7 @@ def no_at(seq, tail_length=30):
 
 
 def contain_at(seq, tail_length=30):
-    flag = re.match(r"(@+)\S{,30} ", seq)
+    flag = re.search(r"(@+)\S{,30} ", seq)
     if flag is not None:
         return True
     r_at_idx = seq.rfind("@")
@@ -368,5 +368,5 @@ if __name__ == '__main__':
 
     pat2 = re.compile(u"<[^\\u4e00-\\u9fa5]*?>")
     print(pat2.sub("XXX", test_text))
-
+    # '去成为你想成为的人，@花篇篇 皮肤管理培训什么时候都可以开始；去做你想做的事，任何方向都值得努力。祛斑吝惜汗水和能量，哪一条路都是弯路>；朝着目标努力前进，整个世界都会为你让路。未来和梦想，不是想出来的，是拼出来的。'
     # expected: 郭麒麟打卡,且听他分享防疫小知识XXX哈哈XXX哈哈哈哈XXX
