@@ -27,13 +27,11 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
 
         logger.info("Start : {}".format(file_id))
         # data = loader(path)
-        logger.info("Size of this batch : {}, log in {}".format(len(data), file_id))
 
         dirty_data = {k: collections.defaultdict(set) for k in
                       ["other", "name", "str_blacklist", "word_blacklist", "not_en", "confused", "generic", "emoji",
                        "duplicated", "confuse"]} if dirty_dir else None
 
-        logger.info("Batch sample: {}, log in {}".format(data[0][0], file_id))
 
         time_dict = collections.defaultdict(float)
 
@@ -43,6 +41,8 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
         res = []
         if isinstance(data, tuple):
             data = load_lines(data[0], data[1], data[2])
+        logger.info("Size of this batch : {}, log in {}".format(len(data), file_id))
+        logger.info("Batch sample: {}, log in {}".format(data[0][0], file_id))
         while len(data):
             dialog = data.pop(0)
             # session level
@@ -112,7 +112,8 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
             res = data_level.de_generic(res, dirty_data, out_path.replace(".jsonl", "_trigram.jsonl"), 1000)
 
         if len(res) > 0:
-            save_jsonl(res, out_path)
+            #save_jsonl(res, out_path)
+            save_txt("\n".join(["\t\t".join(x) for x in res]), out_path)
             logger.info("Resulting {} dialogs".format(len(res)))
             del res, data
             gc.collect()
