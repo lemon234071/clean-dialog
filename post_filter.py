@@ -7,6 +7,17 @@ import re
 from multiprocessing import Pool
 
 
+def load_txt(path):
+    with open(path, encoding='UTF-8', errors='ignore') as f:
+        data = [i.strip() for i in f.readlines() if len(i.strip()) > 0]
+    return data
+
+
+def save_txt(data, path):
+    with open(path, 'w', encoding='UTF-8') as f:
+        f.write(data)
+
+
 def load_jsonl(path):
     with open(path, 'r', encoding='UTF_8') as f:
         return [json.loads(line) for line in f.readlines() if len(line.strip()) > 0]
@@ -58,6 +69,15 @@ def contains_Chinese(seq):
             return True
     return False
 
+def contain_at(seq, tail_length=30):
+    flag = re.search(r"(@+)\S{,30} ", seq)
+    if flag is not None:
+        return True
+    r_at_idx = seq.rfind("@")
+    if r_at_idx > -1 and len(seq[r_at_idx:]) < tail_length:
+        return True
+    return False
+
 
 def seq_clean(seq, data_type="none"):
     if data_type == "zhihu":
@@ -65,7 +85,13 @@ def seq_clean(seq, data_type="none"):
         seq = pat.sub("", seq)
     elif data_type == "weibo_tang":
         pat = re.compile(r"\[.*?\] *")
+        pat1 = re.compile(r"［.*?］ *")
         seq = pat.sub("", seq)
+        seq = pat1.sub("", seq)
+    if contain_at(seq):
+        seq = ""
+    if "尼玛" in seq:
+        seq = ""
     return seq
 
 
@@ -74,7 +100,9 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
         new_data = []
         print("loading", path)
         print("outpath", outpath)
-        data = load_jsonl(path)
+        # data = load_jsonl(path)
+        data = load_txt(path)
+        data = [x.split("\t\t") for x in data]
         for dialog in tqdm.tqdm(data):
             new_dialog = []
             for seq in dialog:
@@ -101,7 +129,8 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
                 # flag = len(new_dialog) == 2 and len(new_dialog[1].replace(" ", "")) < min_length
                 # if not flag:
                 new_data.append(new_dialog)
-        save_jsonl(new_data, outpath)
+        # save_jsonl(new_data, outpath)
+        save_txt("\n".join(["\t\t".join(x) for x in new_data]), outpath)
         print("over", path)
     except Exception as e:
         print("error!!!!", e)

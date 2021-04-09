@@ -266,8 +266,10 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             if dirty_data:
                 dirty_data["other"]["weibo_url"].add(orig_utter)
 
-    if utterance and opt.no_brackets and any([x for x in BRACKET if x in file_id]):
-        utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
+    if utterance and opt.no_brackets:
+        utterance = str_level.BRACKETS_REGEX2.sub("", utterance).strip()
+        if any([x for x in BRACKET if x in file_id]):
+            utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
         if not utterance:
             if dirty_data:
                 dirty_data["emoji"]["weibo_emoji"].add(orig_utter)

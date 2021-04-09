@@ -13,6 +13,7 @@ HASHTAG_REGEX = re.compile(r"#.*?# *")
 EMOTION_REGEX = re.compile(r":.*?: *")
 
 BRACKETS_REGEX = re.compile(r"\[.*?\] *")
+BRACKETS_REGEX2 = re.compile(r"［.*?］ *")
 
 ANGLE_REGEX = re.compile(r"<[^\u4e00-\u9fa5]*?>")
 
