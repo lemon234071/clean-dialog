@@ -1,6 +1,7 @@
 import os
 import gc
 import jieba
+import tqdm
 import collections
 import logging
 
@@ -279,9 +280,9 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     if utterance and opt.not_mention:
         if str_level.contain_at(utterance):
+            utterance = ""
             if dirty_data:
                 dirty_data["other"]["mention"].add(orig_utter)
-            utterance = ""
 
     if utterance and opt.no_mention:
         # utterance = str_level.COMMON_MENTION_REGEX.sub("", utterance).strip()
