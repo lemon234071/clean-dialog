@@ -42,7 +42,7 @@ def contain_at(seq, tail_length=30):
     if flag is not None:
         return True
     r_at_idx = seq.rfind("@")
-    if len(seq[r_at_idx:]) < tail_length:
+    if r_at_idx > -1 and len(seq[r_at_idx:]) < tail_length:
         return True
     return False
 

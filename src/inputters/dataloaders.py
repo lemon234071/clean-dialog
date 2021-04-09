@@ -1,5 +1,6 @@
 import os
 import random
+import platform
 from src.inputters.data_utils import *
 
 
@@ -39,12 +40,17 @@ def paths_dataloader(dir_path, out_dir, batch_size):
     # random.shuffle(jsonl_path_list)
     for file, subdir_name, path in jsonl_path_list:
         # dataset = load_jsonl(path)
-        file_len = wc_count(path)
+        if platform.system() == "Windows":
+            file_len = buff_count(path)
+        elif platform.system() == "Linux":
+            file_len = wc_count(path)
+        else:
+            raise Exception
         for i in range(0, file_len, batch_size):
             fid = subdir_name + "_" + file.replace(".jsonl", "") + "_trunc" + str(i)
             # out
             out_subdir = os.path.join(cleaned_dir, subdir_name)
             if not os.path.exists(out_subdir):
                 os.mkdir(out_subdir)
-            out_path = os.path.join(out_subdir, fid + ".jsonl")
+            out_path = os.path.join(out_subdir, fid + ".txt")
             yield fid, path, i, i + batch_size, out_path

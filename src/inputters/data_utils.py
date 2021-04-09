@@ -117,6 +117,17 @@ def wc_count(file_name):
     return int(out.split()[0]) + 1
 
 
+def buff_count(file_name):
+    with open(file_name, 'rb') as f:
+        count = 0
+        buf_size = 1024 * 1024
+        buf = f.read(buf_size)
+        while buf:
+            count += buf.count(b'\n')
+            buf = f.read(buf_size)
+        return count
+
+
 if __name__ == '__main__':
     print("testing")
     path = "weibo_tang300/2020030911.jsonl"
