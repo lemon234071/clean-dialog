@@ -19,7 +19,7 @@ BRACKET = ["weibo_tang"]
 SPECIAL_LISTS = ["<EMAIL>", "<PHONE>"]
 
 
-def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
+def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
     try:
         logger.info("The saved path of data is {}".format(out_path))
 
@@ -33,7 +33,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
 
         dirty_data = {k: collections.defaultdict(set) for k in
                       ["other", "name", "str_blacklist", "word_blacklist", "not_en", "confused", "generic", "emoji",
-                       "duplicated", "confuse"]}
+                       "duplicated", "confuse"]} if dirty_dir else None
 
         logger.info("Batch sample: {}, log in {}".format(data[0][0], file_id))
 
@@ -49,7 +49,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
             # dialog = session_check(opt, dialog)
             if opt.utterance_dedup:
                 if len(set(dialog)) < 2:
-                    if len(set(dialog)) > 0:
+                    if dirty_data and len(set(dialog)) > 0:
                         dirty_data["other"]["less_pair"].add(dialog[0])
                     continue
 
@@ -69,7 +69,8 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
                     if opt.no_fenxiang:
                         fenxiang = str_level.no_fenxiang(tight_utter)
                         if fenxiang:
-                            dirty_data["other"]["分享图片"].add(utter)
+                            if dirty_data:
+                                dirty_data["other"]["分享图片"].add(utter)
                             last_skip = True
                             continue
                     if opt.no_toupiao and (j + 1) < len(utters):
@@ -103,9 +104,6 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
             #         if len(new_dialog[start_idx:]) > 1:
             #             res.append(new_dialog[start_idx:])
 
-        del data
-        gc.collect()
-
         # data level
         if opt.de_ad:
             res = data_level.de_ad(res, dirty_data)
@@ -115,33 +113,40 @@ def main_filter(opt, file_id, data, blacklist, out_path, out_dir, cut=True):
 
         if len(res) > 0:
             save_jsonl(res, out_path)
-            del res
+            logger.info("Resulting {} dialogs", len(res))
+            del res, data
             gc.collect()
 
         # save dirty data
-        dirty_dir = os.path.join(out_dir, "dirty_data")
-        if not os.path.isdir(dirty_dir):
-            os.mkdir(dirty_dir)
-        for k, v in dirty_data.items():
-            k_path = os.path.join(dirty_dir, k)
-            if sum(len(subv) for subv in v.values()):
-                if not os.path.isdir(k_path):
-                    os.mkdir(k_path)
-                if "blacklist" in k and len(v) > 0:
-                    temp_bl = {bk: len(bv) for bk, bv in v.items()}
-                    temp_bl = sorted(temp_bl.items(), key=lambda x: x[1], reverse=True)
-                    save_json(temp_bl, os.path.join(k_path, "sta_{}.json".format(file_id)))
-                    save_json({bk: list(bv) for bk, bv in v.items()}, os.path.join(k_path, "{}.json".format(file_id)))
-                else:
-                    for sub_k, sub_v in v.items():
-                        if len(sub_v) > 0:
-                            save_jsonl(sub_v, os.path.join(k_path, "{}_{}.jsonl".format(sub_k, file_id)))
-        del dirty_data
-        gc.collect()
-        logger.info("{}  over, resulting {} dialogs".format(file_id, len(res)))
+        if dirty_dir:
+            save_dirty(dirty_dir, dirty_data, file_id)
+        logger.info("{}  over".format(file_id))
     except Exception as e:
         logger.error("Error !!!! : {}, log in {}".format(e, out_path))
     return file_id
+
+
+def save_dirty(dirty_dir, dirty_data, file_id):
+    dirty_dir = os.path.join(dirty_dir, "dirty_data")
+    if not os.path.isdir(dirty_dir):
+        os.makedirs(dirty_dir)
+    for k, v in dirty_data.items():
+        k_path = os.path.join(dirty_dir, k)
+        if sum(len(subv) for subv in v.values()):
+            if not os.path.isdir(k_path):
+                os.mkdir(k_path)
+            if "blacklist" in k and len(v) > 0:
+                temp_bl = {bk: len(bv) for bk, bv in v.items()}
+                temp_bl = sorted(temp_bl.items(), key=lambda x: x[1], reverse=True)
+                save_json(temp_bl, os.path.join(k_path, "sta_{}.json".format(file_id)))
+                save_json({bk: list(bv) for bk, bv in v.items()}, os.path.join(k_path, "{}.json".format(file_id)))
+            else:
+                for sub_k, sub_v in v.items():
+                    if len(sub_v) > 0:
+                        save_jsonl(sub_v, os.path.join(k_path, "{}_{}.jsonl".format(sub_k, file_id)))
+    del dirty_data
+    gc.collect()
+    return
 
 
 def add_filter_args(argparser):
@@ -197,18 +202,21 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     # TODO check
     utterance = utterance.replace("{\\1c&H4080FF&}", "")
     if not utterance:
-        dirty_data["other"]["{\\1c&H4080FF&}"].add(orig_utter)
+        if dirty_data:
+            dirty_data["other"]["{\\1c&H4080FF&}"].add(orig_utter)
 
     # TODO check
     if "¡ 评论" in utterance:
         utterance = utterance[:utterance.index("¡ 评论")]
         if not utterance:
-            dirty_data["other"]["¡ 评论"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["¡ 评论"].add(orig_utter)
 
     if utterance and opt.no_toupiao:
         toupiao = str_level.no_toupiao(utterance)
         if toupiao:
-            dirty_data["other"]["toupiao"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["toupiao"].add(orig_utter)
             utterance = ""
 
     if utterance and opt.no_specific_utter:
@@ -219,41 +227,48 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     if utterance and opt.no_special_topic:
         special_topic_word = str_level.de_str_blacklist(tight_utter, blacklist["special_topic"])
         if special_topic_word:
-            dirty_data["special_topic"][special_topic_word].add(orig_utter)
+            if dirty_data:
+                dirty_data["special_topic"][special_topic_word].add(orig_utter)
             utterance = ""
 
     if utterance and opt.no_str_blacklist:
         global MAX_LEN_STR_BLACKWORD
         black_word = str_level.de_str_blacklist2(tight_utter, blacklist["str_blacklist"], MAX_LEN_STR_BLACKWORD)
         if black_word:
-            dirty_data["str_blacklist"][black_word].add(orig_utter)
+            if dirty_data:
+                dirty_data["str_blacklist"][black_word].add(orig_utter)
             utterance = ""
 
     if utterance and opt.no_reply_tag:
         utterance = str_level.REPLY_MENTION_REGEX.sub("", utterance).strip()
         if not utterance:
-            dirty_data["other"]["no_reply_tag"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["no_reply_tag"].add(orig_utter)
 
     # regex
     if utterance and opt.no_angle:
         utterance = str_level.ANGLE_REGEX.sub("", utterance).strip()
         if not utterance:
-            dirty_data["other"]["angle"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["angle"].add(orig_utter)
 
     if utterance and opt.no_url:
         utterance = str_level.URL_REGEX.sub(" ", utterance).strip()
         if not utterance:
-            dirty_data["other"]["url"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["url"].add(orig_utter)
 
     if utterance and opt.no_weibo_url:
         utterance = str_level.WEIBO_URL_REGEX.sub(" ", utterance).strip()
         if not utterance:
-            dirty_data["other"]["weibo_url"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["weibo_url"].add(orig_utter)
 
     if utterance and opt.no_brackets and any([x for x in BRACKET if x in file_id]):
         utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
         if not utterance:
-            dirty_data["emoji"]["weibo_emoji"].add(orig_utter)
+            if dirty_data:
+                dirty_data["emoji"]["weibo_emoji"].add(orig_utter)
 
     if utterance and opt.no_hashtag:
         utterance = str_level.HASHTAG_REGEX.sub("", utterance).strip()
@@ -263,7 +278,8 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     if utterance and opt.not_mention:
         if str_level.contain_at(utterance):
-            dirty_data["other"]["mention"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["mention"].add(orig_utter)
             utterance = ""
 
     if utterance and opt.no_mention:
@@ -279,7 +295,8 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     if utterance and opt.no_showall and any([x for x in SHOWALL if x in file_id]):
         utterance = str_level.ZHIHU_SHOW_ALL_REGEX.sub("", utterance).strip()
         if not utterance:
-            dirty_data["other"]["showall"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["showall"].add(orig_utter)
 
     if utterance and opt.no_duplicated:
         utterance = str_level.reduce_duplicated_phrase(utterance)
@@ -287,7 +304,8 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     if utterance and opt.no_emoji:
         utterance = str_level.remove_emoji(utterance)
         if not utterance:
-            dirty_data["emoji"]["emoji"].add(orig_utter)
+            if dirty_data:
+                dirty_data["emoji"]["emoji"].add(orig_utter)
 
     # clean-text lib
     if utterance and opt.use_cleantext_lib:
@@ -304,18 +322,21 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             replace_with_email="</EMAIL>",
             replace_with_phone_number="</PHONE>")
         if not utterance:
-            dirty_data["other"]["cleantext"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["cleantext"].add(orig_utter)
 
     if utterance and opt.no_short:
         len_flag = str_level.too_short(utterance)
         if len_flag:
-            dirty_data["other"]["short"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["short"].add(orig_utter)
             utterance = ""
 
     if utterance and opt.no_long:
         len_flag = str_level.too_long(utterance)
         if len_flag:
-            dirty_data["other"]["long"].add(orig_utter)
+            if dirty_data:
+                dirty_data["other"]["long"].add(orig_utter)
             utterance = ""
 
     if utterance and opt.bert_clean:
@@ -337,26 +358,30 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     if word_list and opt.no_alpha_noise:
         alpha_word = str_level.not_en(word_list, blacklist["english"])
         if alpha_word:
-            dirty_data["not_en"][alpha_word].add(orig_utter)
+            if dirty_data:
+                dirty_data["not_en"][alpha_word].add(orig_utter)
             word_list = []
             utterance = ""
 
     if word_list and opt.check_confuse_word:
         confuse_word = str_level.check_confuse(word_list, blacklist["confuse"])
         if confuse_word:
-            dirty_data["confuse"][confuse_word].add(orig_utter)
+            if dirty_data:
+                dirty_data["confuse"][confuse_word].add(orig_utter)
 
     if word_list and opt.no_word_blacklist:
         dirty_word = str_level.de_word_blacklist(word_list, blacklist["word_blacklist"])
         if dirty_word:
-            dirty_data["word_blacklist"][dirty_word].add(orig_utter)
+            if dirty_data:
+                dirty_data["word_blacklist"][dirty_word].add(orig_utter)
             word_list = []
             utterance = ""
 
     if word_list and opt.yda_dedupl:
         yda_dupl_flag = str_level.judge_yda_dupl(word_list)
         if yda_dupl_flag:
-            dirty_data["duplicated"]["yda"].add(orig_utter)
+            if dirty_data:
+                dirty_data["duplicated"]["yda"].add(orig_utter)
             word_list = []
             utterance = ""
 

@@ -19,7 +19,8 @@ def de_ad(data, dirty_data):
         if len(k.replace(" ", "")) > 20 and len(v) > 2:
             ad_resp_dict[k] = len(v)
     ad_resp = sorted(ad_resp_dict.items(), key=lambda x: x[1], reverse=True)
-    dirty_data["ad"] = ad_resp
+    if dirty_data:
+        dirty_data["ad"] = ad_resp
     logger.info("Ad len: {}".format(len(ad_resp)))
 
     resp_set = set(ad_resp_dict.keys())
@@ -74,7 +75,8 @@ def de_generic(data, dirty_data, tri_path, num):
             cnt = collections.Counter(tri_grams)
             for word, num in cnt.items():
                 if word in generic and 0.9 < (num * 3 / len(resp)):
-                    dirty_data["generic"].append(resp)
+                    if dirty_data:
+                        dirty_data["generic"].append(resp)
                     if len(dialog[start_idx: i]) > 1:
                         new_dataset.append(dialog[start_idx: i])
                         start_idx = i + 1

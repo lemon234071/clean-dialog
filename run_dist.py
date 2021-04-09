@@ -74,6 +74,7 @@ def main():
                         help="Path of the tool data.")
 
     parser.add_argument("--out_dir", type=str, default="./data/", help="Main data dir.")
+    parser.add_argument("--dirty_dir", type=str, default="", help="Dir to save dirty cases.")
     parser.add_argument("--raw_dir", type=str, default="./data/raw/", help="Dir of the raw dataset.")
     add_filter_args(parser)
     args = parser.parse_args()
@@ -93,7 +94,7 @@ def main():
     # multi processing
     logger.info("Cleaning start!")
     for file_id, data, outpath in tqdm.tqdm(simple_loader):
-        p.apply_async(main_filter, args=(args, file_id, data, blacklists, outpath, args.out_dir))
+        p.apply_async(main_filter, args=(args, file_id, data, blacklists, outpath, args.dirty_dir))
         time.sleep(0.01)
     time.sleep(0.01)
     p.close()
