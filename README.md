@@ -11,7 +11,7 @@
       
 # 运行
 
-    bash run.sh
+    bash ./scripts/run.sh
 
 # Rules
 规则包括目前大部分论文内的清洗规则：  

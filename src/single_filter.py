@@ -1,15 +1,13 @@
 import os
 import gc
-import tqdm
 import jieba
-import time
 import collections
 import logging
 
 from cleantext import clean
 
-from data_utils import *
-from rules import str_level, session_level, data_level
+from src.inputters.data_utils import *
+from src.rules import session_level, data_level, str_level
 
 logger = logging.getLogger(__file__)
 
@@ -43,6 +41,8 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
         MAX_LEN_STR_BLACKWORD = max(len(x) for x in blacklist["str_blacklist"]) + 2
 
         res = []
+        if isinstance(data, tuple):
+            data = load_lines(data[0], data[1], data[2])
         while len(data):
             dialog = data.pop(0)
             # session level
@@ -113,7 +113,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
 
         if len(res) > 0:
             save_jsonl(res, out_path)
-            logger.info("Resulting {} dialogs", len(res))
+            logger.info("Resulting {} dialogs".format(len(res)))
             del res, data
             gc.collect()
 

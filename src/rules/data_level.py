@@ -3,7 +3,7 @@ import tqdm
 import collections
 import logging
 
-from data_utils import *
+from src.inputters.data_utils import *
 
 logger = logging.getLogger(__file__)
 
