@@ -140,7 +140,7 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
 def main(indir, outdir, extra_func=False):
     paths = [os.path.join(instance[0], file)
              for instance in list(os.walk(indir))
-             for file in instance[-1] if file.endswith(".jsonl")]
+             for file in instance[-1] if file.endswith(".txt")]
 
     outpaths = [path.replace(indir, outdir) for path in paths]
 
