@@ -85,16 +85,18 @@ def merge_sta(stas):
     for sta in stas:
         for k, v in sta.items():
             res[k] += v
-    res["avg word"] = res["chars"] / res["utterances"]
+    if res.get("utterances", 0) > 0:
+        res["avg word"] = res["chars"] / res["utterances"]
     res["single"] = res["sessions"] - res["multi"]
-    res["avg multi utter"] = (res["utterances"] - 2 * res["single"]) / res["multi"]
+    if res.get("multi", 0) > 0:
+        res["avg multi utter"] = (res["utterances"] - 2 * res["single"]) / res["multi"]
     return res
 
 
 def sta_dist(indir, data_type):
     paths = [os.path.join(instance[0], file)
              for instance in list(os.walk(indir))
-             for file in instance[-1] if file.endswith(".jsonl")]
+             for file in instance[-1] if file.endswith(data_type)]
 
     # single debug
     # path = paths[0]

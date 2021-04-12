@@ -92,6 +92,8 @@ def seq_clean(seq, data_type="none"):
         seq = ""
     if "尼玛" in seq:
         seq = ""
+    seq = seq.replace("[图片]", "")
+    seq = seq.replace("［图片］", "")
     return seq
 
 
@@ -116,7 +118,8 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
                         data_type = "none"
                     seq = seq_clean(seq, data_type)
 
-                length = len(seq.replace(" ", ""))
+                seq = seq.replace(" ", "")
+                length = len(seq)
                 if length > max_length or length < 1:
                     if len(new_dialog) > 1:
                         # flag = len(new_dialog) == 2 and len(new_dialog[1].replace(" ", "")) < min_length
@@ -130,7 +133,8 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
                 # if not flag:
                 new_data.append(new_dialog)
         # save_jsonl(new_data, outpath)
-        save_txt("\n".join(["\t\t".join(x) for x in new_data]), outpath)
+        new_data = ["\t\t".join(x[:j]) for x in new_data for j in range(1, len(x))]
+        save_txt("\n".join(new_data), outpath)
         print("over", path)
     except Exception as e:
         print("error!!!!", e)
