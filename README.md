@@ -1,17 +1,20 @@
 本项目为一个清洗对话数据的多线程框架，目前还比较简陋，欢迎提bug和优化，比如句内重复短语降重函数的正则或者后缀算法。代码还在继续完善中，注释以及一些函数出处引用等待完善。
 
 # 目录结构
-
-    --clean: 清洗框架主目录  
-      ---rules: 存放各级别的规则函数   
-      ---tool_data: 存放黑名单词典，每行一个词  
-      ---run_dist.py: 主运行文件，构造dataloader, 加载黑名单  
-      ---single_filter.py: run_dist.py所调用的单个线程的主程序，加载处理单个数据，并保存过滤后的数据以及脏数据  
-      ---run.sh: 使用我挑选的几个规则来运行run_dist.py   
+    
+    --scripts: 存放运行脚本
+      ---run.sh: 使用我挑选的几个规则来运行run_dist.py  
+    --src: 清洗框架功能主目录  
+      ---inputters: 存放dataloader 和 存取数据工具函数
+      ---rules: 存放各级别的规则函数
+      ---single_filter.py: run_dist.py所调用的单个线程的主程序，加载处理单个数据，并保存过滤后的数据以及脏   
+    ---tool_data: 存放黑名单词典，每行一个词  
+    ---run_dist.py: 主运行文件，加载dataloader，加载黑名单，简历线程池 
+    ---utils: 数据统计，结果检测
       
-# 运行
+# 运行并保存日志
 
-    bash ./scripts/run.sh
+    bash ./scripts/run.sh 2>&1 | tee -a cleaning.log
 
 # Rules
 规则包括目前大部分论文内的清洗规则：  
