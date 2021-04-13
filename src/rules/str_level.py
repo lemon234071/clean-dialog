@@ -5,7 +5,7 @@ import unicodedata
 
 from nltk.corpus import wordnet
 
-SPECIFIC = {"repost", "转发", "repostweibo"}
+SPECIFIC = {"repost", "转发", "repostweibo", "分享图片"}
 
 # 感恩节# 感谢给予自己生命，养育我们长大的父母，他们教会了我们爱、善良和尊严。
 HASHTAG_REGEX = re.compile(r"#.*?# *")
@@ -136,12 +136,6 @@ def remove_emoji2(utter):
 def no_toupiao(utter):
     temp = utter.replace(" ", "")
     if "我投给了" in temp and "你也快来表态吧" in temp:
-        return True
-    return False
-
-
-def no_fenxiang(utter):
-    if utter == "分享图片":
         return True
     return False
 

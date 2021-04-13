@@ -8,7 +8,7 @@ from src.inputters.data_utils import *
 logger = logging.getLogger(__file__)
 
 
-def de_ad(data, dirty_data):
+def no_ad(data, dirty_data):
     """A Dataset for Research on Short-Text Conversation (Wang et al. 2013)"""
     resp_dict = collections.defaultdict(set)
     for dialog in data:

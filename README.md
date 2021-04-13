@@ -22,48 +22,60 @@
 4 URL过滤  
 5 unicode 相关修复   
 6 去重：包括重复词缩减、过滤掉上下文相同的句子、重复的对话   
-7 、meena以及dialogpt中使用的广告、通用回复筛除   
+7 meena以及dialogpt中使用的广告、通用回复筛除   
 
 以上识别出来的噪音，如可在句中抹去则抹去。  
 如不可抹去则放弃该句子：即，若是单轮对话放弃该对话，若是多轮对话则以该句为分割，切分对话。  
 
 NOTE THAT: 
-1, 改动某规则的时候注意是否影响到其他规则
+1, 改动某规则的时候注意是否影响到其他规则, 规则清洗顺序有要求
 2, 黑名单如人名、特殊话题等可根据需要配置放置到 ./tool_data/下，文件命名可自行配置请参阅。/run_dist.py中dataloader。黑名单可到github上搜寻，如 https://github.com/fighting41love/funNLP 
 
 # Auguments
-
-        --n_p"  #  多线程使用的线程数
-        --batch_size"  # 单个处理文件的session数
-        --tool_dir  # 黑名单文件所在目录
-        --out_dir  # 过滤后文件输出的目录
-        --raw_dir  # 待处理文件所在的目录
         
-        # 清洗规则
-        # 基于原始字符串
-        --split_multi_repost  # "一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？" 按 "//"分割为多句
-        --utterance_dedup  # 如果 context == response 则去掉该对话
-        --no_name  # 对话中的人名用 <NAME1>, <NAME2> ...代替
-        --split_multi_repost  # 将如下单句子拆成多个回复，与context一起构成多个对话："一起来吗？@Cindy //@Bob: 算我一个//@Amy:今晚开派对吗？"
-        --de_ad  # 去除可能是广告的对话（同样的回复对应多个context， 借鉴 https://www.aclweb.org/anthology/D13-1096.pdf）
-        --de_generic_dialog  # 去除通用回复，借鉴 https://arxiv.org/abs/1911.00536
-        --no_reply_tag  # 去除 "回复 @Devid: 我会准时到的" 中的 "回复 @Devid:"
-        --no_hashtag  # 去除 "# 感恩节# 感谢给予自己生命，养育我们长大的父母" 中的 "# 感恩节#"
-        --no_emotion # 去除 ": xxx: 感谢给予自己生命" 中的 ": xxx:"
-        --no_mention  # 去除 "一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？" 中的 "@Cindy"， "@Bob:"， "@Amy:"
-        --no_repost  # 去除"一起来吗？@Cindy //@Bob: 算我一个//@Amy: 今晚开派对吗？" 中的 "//@Bob: 算我一个//@Amy: 今晚开派对吗？"
-        --no_brackets  # 去除中括号中的内容: "[XXX] 今晚月色真美"
-        --no_duplicated  # 降重 "老师，您好您好您好您好您好您好" 为 "老师， 您好您好您好"
-        --no_emoji  # 去除emoji表情
-        --no_short  # 去除过短的句子
-        --no_long   # 去除过长的句子
-        --no_special_topic  # 去除带有 特殊话题的句子，如医疗名词、金融名词
-        --bert_clean  # 使用 BertTokenizer中文中的清理函数清理句子
-        --use_cleantext_lib  # 使用clean-text库来去除掉句子中的电话号、邮箱、unicode错误等
-        --no_str_blacklist   # 过滤掉句子中含有该黑名单中词的句子
-    
-        # 基于分词后的 word list
-        --no_word_blacklist  # 过滤掉 分词后的句子中含有的词在 该黑名单中的句子
-        --no_alpha_noise  # 过滤掉含有不成 英文单词的 字母组合 的句子
-        --check_confuse_word  # 给定一个黑名单，看看包含这些词的句子是否是噪音
-        --yda_dedupl   # 使用我设计的一个函数过滤该句子: 如果一个词语在句子中出现的比例 超过一个阈值则放弃该句子
+| 参数               | 描述                 |
+| :---------------  | :------------------- |
+| n_p               | 多进程数 |
+| batch_size        | 单个进程最大处理session数 |
+| tool_dir          | 工具数据所在目录（如黑名单）|
+| out_dir           | 清洗后的文件输出目录 |
+| raw_dir           | 待处理文件所在mull  |
+| dirty_dir         | 存储清洗出来的脏数据，如为空则不存  |
+| :---------------  | :------------------- |
+| split_multi_repost| 将微博转发数据按"//@aaa XXXX //@bbb XXX"撕开成多句  |
+| no_utter_dup   | 如果 context == response 则去掉该对话  |
+| re_name           | 人名用 <NAME1>, <NAME2> ...替换 |
+| no_ad             | 去除可能是广告的对话（同样的回复对应多个context）借鉴[论文](https://www.aclweb.org/anthology/D13-1096.pdf) |
+| de_generic_dialog | 去通用回复 借鉴[论文](https://arxiv.org/abs/1911.00536)|
+| no_short_response | 去掉对话尾部所有过短回复 |
+| :---------------  | :------------------- |
+| bert_clean        | 使用BertTokenizer 中函数清理句子 |
+| cleantext_clean | 使用[clean-text]() 清理 （电话号、邮箱、unicode错误等） |
+| :---------------  | :------------------- |
+| no_short          | 去除过短的句子 |
+| no_long           | 去除过长的句子 |
+| de_reply_tag      | 去除微博中 "回复 @XXX:" |
+| de_hashtag        | 去除句中 "# XXX#" |
+| de_emotion        | 去除句中 ": XXX:" |
+| de_mention        | 去除句子中 "@Cindy"， "@Bob:"， "@Amy:" 等|
+| no_mention       | 去除包含 @XXX 的句子 |
+| de_repost         | 去除句中 "//XXX" |
+| de_duplicated     | 句中短语降重 （待用后缀算法优化） |
+| no_emoji          | 去除emoji （代补全） |
+| no_special_topic  | 过滤包含特定名单词的对话对话 |
+| no_str_blacklist  | 过滤包含黑名单词的对话 |
+| no_toupiao        | 判断是否是微博投票 |
+| no_specific_utter | 删除一些特定句子 |
+| contain_zh        | 删掉不包含中文的句子 |
+| de_single_repost_mention| 去掉 "@XXX:" |
+| de_weibo_url      | 去除 http:\\t.c |
+| de_url            | 去除 url |
+| de_angle          | 去除 <XXX> 其中XX为非中文 |
+| :---------------  | :------------------- |
+| de_showall        | 去除某些特定文件中的 "...显示全部" |
+| de_brackets       | 去除某些特定文件中的 "\[XXX\]" |
+| :---------------  | :------------------- |
+| no_word_blacklist | 过滤分此后的黑名单词的对话 |
+| no_alpha_noise    | 过滤掉含有不成 英文单词的 字母组合 的句子 |
+| check_confuse_word| 保存包含混淆名单词的对话进行recall |
+| yda_dedupl        | 如果一个词语在句子中出现的比例 超过一个阈值则放弃该句子 |

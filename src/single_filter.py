@@ -48,7 +48,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
             dialog = data.pop(0)
             # session level
             # dialog = session_check(opt, dialog)
-            if opt.utterance_dedup:
+            if opt.no_utter_dup:
                 if len(set(dialog)) < 2:
                     if dirty_data and len(set(dialog)) > 0:
                         dirty_data["other"]["less_pair"].add(dialog[0])
@@ -61,19 +61,9 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
                 else:
                     utters = [dialog[i]]
 
-                last_skip = False
                 for j, utter in enumerate(utters):
                     tight_utter = utter.replace(" ", "")
-                    if last_skip:
-                        last_skip = False
-                        continue
-                    if opt.no_fenxiang:
-                        fenxiang = str_level.no_fenxiang(tight_utter)
-                        if fenxiang:
-                            if dirty_data:
-                                dirty_data["other"]["分享图片"].add(utter)
-                            last_skip = True
-                            continue
+
                     if opt.no_toupiao and (j + 1) < len(utters):
                         toupiao = str_level.no_toupiao(utters[j + 1])
                         if toupiao:
@@ -81,7 +71,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
                     utter = utterance_clean(opt, file_id, utter, tight_utter, blacklist, dirty_data, time_dict, cut)
                     new_dialog.append(utter)
 
-            if opt.no_name:
+            if opt.re_name:
                 new_dialog = session_level.de_name(new_dialog, blacklist["name"])
 
             start_idx = 0 if new_dialog[0] else 1
@@ -106,8 +96,8 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
             #             res.append(new_dialog[start_idx:])
 
         # data level
-        if opt.de_ad:
-            res = data_level.de_ad(res, dirty_data)
+        if opt.no_ad:
+            res = data_level.no_ad(res, dirty_data)
 
         if opt.de_generic_dialog:
             res = data_level.de_generic(res, dirty_data, out_path.replace(".jsonl", "_trigram.jsonl"), 1000)
@@ -154,38 +144,37 @@ def save_dirty(dirty_dir, dirty_data, file_id):
 def add_filter_args(argparser):
     opt = argparser.add_argument_group('Filter Arguments')
 
-    opt.add_argument('--utterance_dedup', action="store_true")
-    opt.add_argument('--no_name', action="store_true")
+    opt.add_argument('--no_utter_dup', action="store_true")
+    opt.add_argument('--re_name', action="store_true")
     opt.add_argument('--split_multi_repost', action="store_true")
-    opt.add_argument('--de_ad', action="store_true")
+    opt.add_argument('--no_ad', action="store_true")
     opt.add_argument('--de_generic_dialog', action="store_true")
-    opt.add_argument('--no_reply_tag', action="store_true")
-    opt.add_argument('--no_hashtag', action="store_true")
-    opt.add_argument('--no_emotion', action="store_true")
-    opt.add_argument('--no_mention', action="store_true")
-    opt.add_argument('--no_repost', action="store_true")
-    opt.add_argument('--no_duplicated', action="store_true")
+    opt.add_argument('--de_reply_tag', action="store_true")
+    opt.add_argument('--de_hashtag', action="store_true")
+    opt.add_argument('--de_emotion', action="store_true")
+    opt.add_argument('--de_mention', action="store_true")
+    opt.add_argument('--de_repost', action="store_true")
+    opt.add_argument('--de_duplicated', action="store_true")
     opt.add_argument('--no_emoji', action="store_true")
     opt.add_argument('--no_short', action="store_true")
     opt.add_argument('--no_long', action="store_true")
     opt.add_argument('--no_special_topic', action="store_true")
     opt.add_argument('--bert_clean', action="store_true")
-    opt.add_argument('--use_cleantext_lib', action="store_true")
+    opt.add_argument('--cleantext_clean', action="store_true")
     opt.add_argument('--no_str_blacklist', action="store_true")
     opt.add_argument('--no_toupiao', action="store_true")
     opt.add_argument('--no_short_response', action="store_true")
-    opt.add_argument('--no_fenxiang', action="store_true")
     opt.add_argument('--no_specific_utter', action="store_true")
     opt.add_argument('--contain_zh', action="store_true")
-    opt.add_argument('--no_single_repost_mention', action="store_true")
-    opt.add_argument('--no_weibo_url', action="store_true")
-    opt.add_argument('--no_url', action="store_true")
-    opt.add_argument('--not_mention', action="store_true")
-    opt.add_argument('--no_angle', action="store_true")
+    opt.add_argument('--de_single_repost_mention', action="store_true")
+    opt.add_argument('--de_weibo_url', action="store_true")
+    opt.add_argument('--de_url', action="store_true")
+    opt.add_argument('--no_mention', action="store_true")
+    opt.add_argument('--de_angle', action="store_true")
 
     # special files
-    opt.add_argument('--no_showall', action="store_true")
-    opt.add_argument('--no_brackets', action="store_true")
+    opt.add_argument('--de_showall', action="store_true")
+    opt.add_argument('--de_brackets', action="store_true")
 
     # words list level
     opt.add_argument('--no_word_blacklist', action="store_true")
@@ -241,32 +230,32 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
                 dirty_data["str_blacklist"][black_word].add(orig_utter)
             utterance = ""
 
-    if utterance and opt.no_reply_tag:
+    if utterance and opt.de_reply_tag:
         utterance = str_level.REPLY_MENTION_REGEX.sub("", utterance).strip()
         if not utterance:
             if dirty_data:
-                dirty_data["other"]["no_reply_tag"].add(orig_utter)
+                dirty_data["other"]["de_reply_tag"].add(orig_utter)
 
     # regex
-    if utterance and opt.no_angle:
+    if utterance and opt.de_angle:
         utterance = str_level.ANGLE_REGEX.sub("", utterance).strip()
         if not utterance:
             if dirty_data:
                 dirty_data["other"]["angle"].add(orig_utter)
 
-    if utterance and opt.no_url:
+    if utterance and opt.de_url:
         utterance = str_level.URL_REGEX.sub(" ", utterance).strip()
         if not utterance:
             if dirty_data:
                 dirty_data["other"]["url"].add(orig_utter)
 
-    if utterance and opt.no_weibo_url:
+    if utterance and opt.de_weibo_url:
         utterance = str_level.WEIBO_URL_REGEX.sub(" ", utterance).strip()
         if not utterance:
             if dirty_data:
                 dirty_data["other"]["weibo_url"].add(orig_utter)
 
-    if utterance and opt.no_brackets:
+    if utterance and opt.de_brackets:
         utterance = str_level.BRACKETS_REGEX2.sub("", utterance).strip()
         if any([x for x in BRACKET if x in file_id]):
             utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
@@ -274,35 +263,35 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             if dirty_data:
                 dirty_data["emoji"]["weibo_emoji"].add(orig_utter)
 
-    if utterance and opt.no_hashtag:
+    if utterance and opt.de_hashtag:
         utterance = str_level.HASHTAG_REGEX.sub("", utterance).strip()
 
-    if utterance and opt.no_emotion:
+    if utterance and opt.de_emotion:
         utterance = str_level.EMOTION_REGEX.sub("", utterance).strip()
 
-    if utterance and opt.not_mention:
+    if utterance and opt.no_mention:
         if str_level.contain_at(utterance):
             utterance = ""
             if dirty_data:
                 dirty_data["other"]["mention"].add(orig_utter)
 
-    if utterance and opt.no_mention:
+    if utterance and opt.de_mention:
         # utterance = str_level.COMMON_MENTION_REGEX.sub("", utterance).strip()
         utterance = str_level.no_at(utterance).strip()
 
-    if utterance and opt.no_single_repost_mention:
+    if utterance and opt.de_single_repost_mention:
         utterance = str_level.SINGLE_REPPOST_MENTION_REGEX.sub("", utterance).strip()
 
-    if utterance and opt.no_repost:
+    if utterance and opt.de_repost:
         utterance = str_level.REPPOST_MENTION_REGEX.sub("", utterance).strip()
 
-    if utterance and opt.no_showall and any([x for x in SHOWALL if x in file_id]):
+    if utterance and opt.de_showall and any([x for x in SHOWALL if x in file_id]):
         utterance = str_level.ZHIHU_SHOW_ALL_REGEX.sub("", utterance).strip()
         if not utterance:
             if dirty_data:
                 dirty_data["other"]["showall"].add(orig_utter)
 
-    if utterance and opt.no_duplicated:
+    if utterance and opt.de_duplicated:
         utterance = str_level.reduce_duplicated_phrase(utterance)
 
     if utterance and opt.no_emoji:
@@ -312,7 +301,7 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
                 dirty_data["emoji"]["emoji"].add(orig_utter)
 
     # clean-text lib
-    if utterance and opt.use_cleantext_lib:
+    if utterance and opt.cleantext_clean:
         utterance = clean(
             utterance,
             fix_unicode=True,

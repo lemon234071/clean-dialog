@@ -133,7 +133,7 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
                 # if not flag:
                 new_data.append(new_dialog)
         # save_jsonl(new_data, outpath)
-        new_data = ["\t\t".join(x[:j]) for x in new_data for j in range(1, len(x))]
+        new_data = ["\t\t".join(x[:j+1]) for x in new_data for j in range(1, len(x))]
         save_txt("\n".join(new_data), outpath)
         print("over", path)
     except Exception as e:
