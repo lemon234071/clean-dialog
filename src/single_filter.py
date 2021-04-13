@@ -154,7 +154,7 @@ def add_filter_args(argparser):
     opt.add_argument('--de_mention', action="store_true")
     opt.add_argument('--de_repost', action="store_true")
     opt.add_argument('--de_duplicated', action="store_true")
-    opt.add_argument('--no_emoji', action="store_true")
+    opt.add_argument('--de_emoji', action="store_true")
     opt.add_argument('--no_short', action="store_true")
     opt.add_argument('--no_long', action="store_true")
     opt.add_argument('--no_special_topic', action="store_true")
@@ -295,7 +295,7 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     if utterance and opt.de_duplicated:
         utterance = str_level.reduce_duplicated_phrase(utterance)
 
-    if utterance and opt.no_emoji:
+    if utterance and opt.de_emoji:
         utterance = str_level.remove_emoji(utterance)
         if not utterance:
             if dirty_data:
