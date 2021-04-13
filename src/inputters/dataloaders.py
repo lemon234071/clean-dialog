@@ -31,7 +31,7 @@ def paths_dataloader(dir_path, out_dir, batch_size):
     """Load jsonl data, each line should be a list of dialog: ["你好", "你也好", "哈哈"]"""
     cleaned_dir = os.path.join(out_dir, "cleaned_data")
     if not os.path.exists(cleaned_dir):
-        os.mkdir(cleaned_dir)
+        os.makedirs(cleaned_dir)
 
     subdirs = [(subdir, os.path.join(dir_path, subdir)) for subdir in os.listdir(dir_path)]
     jsonl_path_list = [(file, subdir, os.path.join(subdir_path, file))
