@@ -342,6 +342,12 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         if dirty_data and len(utterance) < len_before:
             dirty_data["other"]["de_alpha_num"].add(orig_utter)
 
+    if utterance and opt.de_specific:
+        len_before = len(utterance)
+        utterance = str_level.de_specific(utterance)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["de_specific"].add(orig_utter)
+
     if utterance and opt.contain_zh:
         if not str_level.contains_Chinese(utterance):
             utterance = ""

@@ -76,6 +76,8 @@ NOTE THAT:
 | de_weibo_url      | 去除 http:\\t.c |
 | de_url            | 去除 url |
 | de_angle          | 去除 <XXX> 其中XX为非中文 |
+| de_alpha_num      | 去除长串无意义的数字字母组合 |
+| de_specific       | 去除句中固定pattern    |
 | :---------------  | :------------------- |
 | de_showall        | 去除某些特定文件中的 "...显示全部" |
 | de_brackets       | 去除某些特定文件中的 "\[XXX\]" |

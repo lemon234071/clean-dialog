@@ -6,8 +6,7 @@ import unicodedata
 from nltk.corpus import wordnet
 
 NO_SPECIFIC = {"repost", "转发", "repostweibo", "分享图片"}
-DE_SPECIFIC = {"为避免本题与原镜像问题所描述之收入差距过大,删除镜像问题", ""}
-
+DE_SPECIFIC = {"[图片]", "［图片］"}  # "为避免本题与原镜像问题所描述之收入差距过大,删除镜像问题",
 
 # "哈哈 sda83daj.jp 哈哈"
 ALPHA_NUM_REGEX = re.compile(r" [a-zA-Z0-9.]+ ")
@@ -359,6 +358,12 @@ def deduplicate_chars(seq_str, no_single=False):
     return "".join(new_list) if new_list else seq_str
 
 
+def de_specific(utter):
+    for pattern in DE_SPECIFIC:
+        utter = utter.replace(pattern, "")
+    return utter
+
+
 # TODO Regex and words
 # DUPLICATE_WORDS_REGEX = re.compile(r"(?P(?P\S-(\S.*\S))  (?:\s*(?P=item)) {1})   (?:\s*(?P=item)) {2,}")
 # DUPLICATE_WORDS_REGEX = re.compile(r"(.+?(?P<item>\S)(?:\s*(?P=item)))(?:\s*(?P=item)){2,}")
@@ -370,4 +375,3 @@ if __name__ == '__main__':
     pat2 = re.compile(r" [a-zA-Z0-9.]+ ")
     # 哈哈 XXX 哈哈
     print(pat2.sub(" XXX ", test_text))
-
