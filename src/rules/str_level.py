@@ -5,7 +5,13 @@ import unicodedata
 
 from nltk.corpus import wordnet
 
-SPECIFIC = {"repost", "转发", "repostweibo", "分享图片"}
+NO_SPECIFIC = {"repost", "转发", "repostweibo", "分享图片"}
+DE_SPECIFIC = {"为避免本题与原镜像问题所描述之收入差距过大,删除镜像问题", ""}
+
+
+# "哈哈 sda83daj.jp 哈哈"
+ALPHA_NUM_REGEX = re.compile(r" [a-zA-Z0-9.]+ ")
+# 哈哈 XXX 哈哈
 
 # 感恩节# 感谢给予自己生命，养育我们长大的父母，他们教会了我们爱、善良和尊严。
 HASHTAG_REGEX = re.compile(r"#.*?# *")
@@ -14,6 +20,7 @@ EMOTION_REGEX = re.compile(r":.*?: *")
 
 BRACKETS_REGEX = re.compile(r"\[.*?\] *")
 BRACKETS_REGEX2 = re.compile(r"［.*?］ *")
+BRACKETS_REGEX3 = re.compile(r"【.*?】 *")
 
 ANGLE_REGEX = re.compile(r"<[^\u4e00-\u9fa5]*?>")
 
@@ -141,7 +148,7 @@ def no_toupiao(utter):
 
 
 def no_specific_utter(utter):
-    if utter in SPECIFIC:
+    if utter in NO_SPECIFIC:
         return True
     return False
 
@@ -359,9 +366,8 @@ def deduplicate_chars(seq_str, no_single=False):
 if __name__ == '__main__':
     print("Testing the RegEx")
 
-    test_text = '< ( ̄ ˇ ̄ ) > < ( ## ) > < 97 | | 97 > < 176 > < u > < ( ° ー ° 〃 ) > < 5 > < / h1 > < 23 > < t > < img src = " < url > < a tnk " href = " < url > < ) ( 〃 > < ) ~ ★ ~ ☆ ~ ★ ~ ☆ ~ ★ gakkiiloveyou ! ~ ★ ~ ☆ ~ ★ ~ ☆ ~ ★ ~ ( > < ( > < html > < ( ̄ 3 ̄ ) > < / p > < img pic _ type = " 1 " src = " < url > < --- > < 2015.11 . 03 > < ( / ▽ \\ = ) > < i , robot > < s > < 16 > < ) < url > < h1 > < ๑ ) ( ๑ > < / s > < 22 > < 007 > < イ グ ジ ス ト > < 144xxx > < img src = < url > < girlsaward 2016 a / w > < 3.0 > < ? b > < ( ̄ ) ̄ ) > < < awaydays > < healer > < cxs > < mama > < ___ ● > < before > < email > < %% > < 9 > < ( = ̄ _ ̄ | | | ) > < dune > < p > < 18 > < 0f $ > < 12 > < 2015.11 . 05 > < < う わ き な シ ン プ ル ス マ イ ル > < women > < ~ ~ ~ > < colors > < / iframe > < ( ̄ ▽ ̄ ) > < * ) ) > < desperado > < title > < phone > < / br > < cosplay > < ( ^ - ^ ) > < ○ > < ) ~ ~ ~ ~ ~ ~ ( > < ( * φ ω φ * ) > < < shark > < 20 > < ) ( > < ( ` ▽ ′ ) > < ( ï ¿ £ 3 ï ¿ £ ) > < 4 > < 13 > < wow > < piece > < mbmd > < champions > < ( · ω · ` ) > < ~ < < 117274117 > < = = > < 2012.1 . 09.02 : 21 > < 1 > < 7 > < doctors > < 49 > < < > < always there > < ( - ^ - ) > < ( " " " o " " " > < 50 > < someday > < 53 > < 8 > < br / > < fairy tale > < ● > < if > < / html > < = 1 ) , rnd ( 0 , a * b ) ( a * b > < ) } } { { ( > < < doctors > < 3 > < chapter.05 > < ) ~ ( > < 。 < url > < m q > < ‖ ‖ < url > < ~ > < / sup > < * * > < < phone > < 14 > < ` \' - , _ ) \' ._ ) , ___ .- ; \' ` " -. ` \\ _..._ / ` . ` , \\ / .- \' \' , / ( ) ( ) \\ ` \' ._ \\ / ( ) . ( | > < gosick > < \' ) ) ) > < 。 > < < br > < ( - ︿ - ) > < anaesthesia > < / u > < ) — — ( > < ( = ~ = ) > < < semini > < ) o ~ ~ o ( > < ) ~ ~ ( > < 52l > < | ; , __. ; \' -. \' -. | , \\ , \\ ` > < bleach > < ( 。 _ 。 ) > < < < > < ( __ __ ) > < br > < \' . < ` \' - , _ ) \' ._ ) , ___ .- ; \' ` " -. ` \\ _..._ / ` . ` , \\ / .- \' \' , / ( ) ( ) \\ ` \' ._ \\ / ( ) . ( | > < 。 = ) > < < url > < a href = " < url > < 2015.11 . 02 > < 19 > < 2 > < 17 > < 12 / 2 > < = 0.5 ) , 0.5 ( a > < 2012.1 . 09.01 : 46 > < / title > < ๑ ) < url > < % % > < ( _ _ ) > < op > < / a > < ( / \\ ) _ ( ) _ ( _ > < ) ☆ < url > < ) < ) ( 〃 > < < 1030 > < b > < gb12142 - 2007 > < 〜 > < 2015.11 . 04 > < \\ x \\ / > < v5.0 . 201401 > < 。 ) ( > < ( ̄ ︶ ̄ ) > < ( __ ) > < falling slowly > < 21 > < / span > < ) o ゜ < url > < ~ ~ > < … … … > < い ら な い > < circus > < sup > < < monster > < _ > < w . k . > < / body > < 11 > < url > < 3 < > < < < < < < < < < æ ° ´ æ ° ´ æ ° ´ > < t2 b . t1 > < 6 > < / b > < \\ x / > < bandage > < > < img >'
+    test_text = "哈哈 sda83daj.jp 哈哈"
+    pat2 = re.compile(r" [a-zA-Z0-9.]+ ")
+    # 哈哈 XXX 哈哈
+    print(pat2.sub(" XXX ", test_text))
 
-    pat2 = re.compile(u"<[^\\u4e00-\\u9fa5]*?>")
-    print(pat2.sub("XXX", test_text))
-    # '去成为你想成为的人，@花篇篇 皮肤管理培训什么时候都可以开始；去做你想做的事，任何方向都值得努力。祛斑吝惜汗水和能量，哪一条路都是弯路>；朝着目标努力前进，整个世界都会为你让路。未来和梦想，不是想出来的，是拼出来的。'
-    # expected: 郭麒麟打卡,且听他分享防疫小知识XXX哈哈XXX哈哈哈哈XXX

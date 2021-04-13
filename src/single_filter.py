@@ -33,7 +33,6 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
                       ["other", "name", "str_blacklist", "word_blacklist", "not_en", "confused", "generic", "emoji",
                        "duplicated", "confuse"]} if dirty_dir else None
 
-
         time_dict = collections.defaultdict(float)
 
         global MAX_LEN_STR_BLACKWORD
@@ -103,7 +102,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
             res = data_level.de_generic(res, dirty_data, out_path.replace(".jsonl", "_trigram.jsonl"), 1000)
 
         if len(res) > 0:
-            #save_jsonl(res, out_path)
+            # save_jsonl(res, out_path)
             save_txt("\n".join(["\t\t".join(x) for x in res]), out_path)
             logger.info("Resulting {} dialogs".format(len(res)))
             del res, data
@@ -171,6 +170,7 @@ def add_filter_args(argparser):
     opt.add_argument('--de_url', action="store_true")
     opt.add_argument('--no_mention', action="store_true")
     opt.add_argument('--de_angle', action="store_true")
+    opt.add_argument('--de_alpha_num', action="store_true")
 
     # special files
     opt.add_argument('--de_showall', action="store_true")
@@ -257,6 +257,7 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     if utterance and opt.de_brackets:
         utterance = str_level.BRACKETS_REGEX2.sub("", utterance).strip()
+        utterance = str_level.BRACKETS_REGEX3.sub("", utterance).strip()
         if any([x for x in BRACKET if x in file_id]):
             utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
         if not utterance:
@@ -334,6 +335,12 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     if utterance and opt.bert_clean:
         utterance = str_level.bert_clean(utterance)
+
+    if utterance and opt.de_alpha_num:
+        len_before = len(utterance)
+        utterance = str_level.ALPHA_NUM_REGEX.sub(" ", utterance).strip()
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["de_alpha_num"].add(orig_utter)
 
     if utterance and opt.contain_zh:
         if not str_level.contains_Chinese(utterance):
