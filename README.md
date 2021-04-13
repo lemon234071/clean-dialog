@@ -31,6 +31,7 @@ NOTE THAT:
 1, 改动某规则的时候注意是否影响到其他规则, 规则清洗顺序有要求
 2, 黑名单如人名、特殊话题等可根据需要配置放置到 ./tool_data/下，文件命名可自行配置请参阅。/run_dist.py中dataloader。黑名单可到github上搜寻，如 https://github.com/fighting41love/funNLP 
 3, 将在每个函数上方给定测试样例，下方给定期待样例
+4, 目前run.sh中使用的参数为本人正在使用的功能
 
 # Auguments
         
