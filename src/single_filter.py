@@ -12,7 +12,7 @@ from src.rules import session_level, data_level, str_level
 
 logger = logging.getLogger(__file__)
 
-MAX_LEN_STR_BLACKWORD = 110
+MAX_LEN_STR_BLACKWORD = 120
 SHOWALL = ["zhihu"]
 BRACKET = ["weibo_tang"]
 SPECIAL_LISTS = ["<EMAIL>", "<PHONE>"]
@@ -60,13 +60,21 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
                 else:
                     utters = [dialog[i]]
 
+                skip_utter = False
                 for j, utter in enumerate(utters):
-                    tight_utter = utter.replace(" ", "")
-
+                    if skip_utter:
+                        skip_utter = False
+                        continue
                     if opt.no_toupiao and (j + 1) < len(utters):
                         toupiao = str_level.no_toupiao(utters[j + 1])
                         if toupiao:
+                            skip_utter = True
+                            if dirty_data:
+                                dirty_data["other"]["toupiao"].add(utters[j])
+                                dirty_data["other"]["toupiao"].add(utters[j + 1])
                             continue
+
+                    tight_utter = utter.replace(" ", "")
                     utter = utterance_clean(opt, file_id, utter, tight_utter, blacklist, dirty_data, time_dict, cut)
                     new_dialog.append(utter)
 
@@ -202,13 +210,6 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         if not utterance:
             if dirty_data:
                 dirty_data["other"]["¡ 评论"].add(orig_utter)
-
-    if utterance and opt.no_toupiao:
-        toupiao = str_level.no_toupiao(utterance)
-        if toupiao:
-            if dirty_data:
-                dirty_data["other"]["toupiao"].add(orig_utter)
-            utterance = ""
 
     if utterance and opt.no_specific_utter:
         specific_utter = str_level.no_specific_utter(tight_utter)
