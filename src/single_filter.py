@@ -29,9 +29,25 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
         logger.info("Start : {}".format(file_id))
         # data = loader(path)
 
-        dirty_data = {k: collections.defaultdict(set) for k in
-                      ["other", "name", "str_blacklist", "word_blacklist", "not_en", "confused", "generic", "emoji",
-                       "duplicated", "confuse"]} if dirty_dir else None
+        dirty_data = (
+            {
+                k: collections.defaultdict(set)
+                for k in [
+                    "other",
+                    "name",
+                    "str_blacklist",
+                    "word_blacklist",
+                    "not_en",
+                    "confused",
+                    "generic",
+                    "emoji",
+                    "duplicated",
+                    "confuse",
+                ]
+            }
+            if dirty_dir
+            else None
+        )
 
         time_dict = collections.defaultdict(float)
 
@@ -75,7 +91,16 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
                             continue
 
                     tight_utter = utter.replace(" ", "")
-                    utter = utterance_clean(opt, file_id, utter, tight_utter, blacklist, dirty_data, time_dict, cut)
+                    utter = utterance_clean(
+                        opt,
+                        file_id,
+                        utter,
+                        tight_utter,
+                        blacklist,
+                        dirty_data,
+                        time_dict,
+                        cut,
+                    )
                     new_dialog.append(utter)
 
             if opt.re_name:
@@ -85,13 +110,13 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
             for i in range(1, len(new_dialog) + 1):
                 if i == len(new_dialog) or not new_dialog[i]:
                     if opt.no_short_response:
-                        part_dialog = new_dialog[start_idx: i][:]
+                        part_dialog = new_dialog[start_idx:i][:]
                         part_dialog = session_level.no_short_response(part_dialog)
                         if len(part_dialog) > 1:
                             res.append(part_dialog)
                     else:
-                        if len(new_dialog[start_idx: i]) > 1:
-                            res.append(new_dialog[start_idx: i])
+                        if len(new_dialog[start_idx:i]) > 1:
+                            res.append(new_dialog[start_idx:i])
                     start_idx = i + 1
             # for i in range(1, len(new_dialog)):
             #     if not new_dialog[i]:
@@ -107,7 +132,9 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
             res = data_level.no_ad(res, dirty_data)
 
         if opt.de_generic_dialog:
-            res = data_level.de_generic(res, dirty_data, out_path.replace(".jsonl", "_trigram.jsonl"), 1000)
+            res = data_level.de_generic(
+                res, dirty_data, out_path.replace(".jsonl", "_trigram.jsonl"), 1000
+            )
 
         if len(res) > 0:
             # save_jsonl(res, out_path)
@@ -138,62 +165,78 @@ def save_dirty(dirty_dir, dirty_data, file_id):
                 temp_bl = {bk: len(bv) for bk, bv in v.items()}
                 temp_bl = sorted(temp_bl.items(), key=lambda x: x[1], reverse=True)
                 save_json(temp_bl, os.path.join(k_path, "sta_{}.json".format(file_id)))
-                save_json({bk: list(bv) for bk, bv in v.items()}, os.path.join(k_path, "{}.json".format(file_id)))
+                save_json(
+                    {bk: list(bv) for bk, bv in v.items()},
+                    os.path.join(k_path, "{}.json".format(file_id)),
+                )
             else:
                 for sub_k, sub_v in v.items():
                     if len(sub_v) > 0:
-                        save_jsonl(sub_v, os.path.join(k_path, "{}_{}.jsonl".format(sub_k, file_id)))
+                        save_jsonl(
+                            sub_v,
+                            os.path.join(k_path, "{}_{}.jsonl".format(sub_k, file_id)),
+                        )
     del dirty_data
     gc.collect()
     return
 
 
 def add_filter_args(argparser):
-    opt = argparser.add_argument_group('Filter Arguments')
+    opt = argparser.add_argument_group("Filter Arguments")
 
-    opt.add_argument('--no_utter_dup', action="store_true")
-    opt.add_argument('--re_name', action="store_true")
-    opt.add_argument('--split_multi_repost', action="store_true")
-    opt.add_argument('--no_ad', action="store_true")
-    opt.add_argument('--de_generic_dialog', action="store_true")
-    opt.add_argument('--de_reply_tag', action="store_true")
-    opt.add_argument('--de_hashtag', action="store_true")
-    opt.add_argument('--de_emotion', action="store_true")
-    opt.add_argument('--de_mention', action="store_true")
-    opt.add_argument('--de_repost', action="store_true")
-    opt.add_argument('--de_duplicated', action="store_true")
-    opt.add_argument('--de_emoji', action="store_true")
-    opt.add_argument('--no_short', action="store_true")
-    opt.add_argument('--no_long', action="store_true")
-    opt.add_argument('--no_special_topic', action="store_true")
-    opt.add_argument('--bert_clean', action="store_true")
-    opt.add_argument('--cleantext_clean', action="store_true")
-    opt.add_argument('--no_str_blacklist', action="store_true")
-    opt.add_argument('--no_toupiao', action="store_true")
-    opt.add_argument('--no_short_response', action="store_true")
-    opt.add_argument('--no_specific_utter', action="store_true")
-    opt.add_argument('--contain_zh', action="store_true")
-    opt.add_argument('--de_single_repost_mention', action="store_true")
-    opt.add_argument('--de_weibo_url', action="store_true")
-    opt.add_argument('--de_url', action="store_true")
-    opt.add_argument('--no_mention', action="store_true")
-    opt.add_argument('--de_angle', action="store_true")
-    opt.add_argument('--de_alpha_num', action="store_true")
+    opt.add_argument("--no_utter_dup", action="store_true")
+    opt.add_argument("--re_name", action="store_true")
+    opt.add_argument("--split_multi_repost", action="store_true")
+    opt.add_argument("--no_ad", action="store_true")
+    opt.add_argument("--de_generic_dialog", action="store_true")
+    opt.add_argument("--de_reply_tag", action="store_true")
+    opt.add_argument("--de_hashtag", action="store_true")
+    opt.add_argument("--de_emotion", action="store_true")
+    opt.add_argument("--de_specific", action="store_true")
+    opt.add_argument("--de_mention", action="store_true")
+    opt.add_argument("--de_repost", action="store_true")
+    opt.add_argument("--de_duplicated", action="store_true")
+    opt.add_argument("--de_emoji", action="store_true")
+    opt.add_argument("--no_short", action="store_true")
+    opt.add_argument("--no_long", action="store_true")
+    opt.add_argument("--no_special_topic", action="store_true")
+    opt.add_argument("--bert_clean", action="store_true")
+    opt.add_argument("--cleantext_clean", action="store_true")
+    opt.add_argument("--no_str_blacklist", action="store_true")
+    opt.add_argument("--no_toupiao", action="store_true")
+    opt.add_argument("--no_short_response", action="store_true")
+    opt.add_argument("--no_specific_utter", action="store_true")
+    opt.add_argument("--contain_zh", action="store_true")
+    opt.add_argument("--de_single_repost_mention", action="store_true")
+    opt.add_argument("--de_weibo_url", action="store_true")
+    opt.add_argument("--de_url", action="store_true")
+    opt.add_argument("--no_mention", action="store_true")
+    opt.add_argument("--de_angle", action="store_true")
+    opt.add_argument("--de_alpha_num", action="store_true")
 
     # special files
-    opt.add_argument('--de_showall', action="store_true")
-    opt.add_argument('--de_brackets', action="store_true")
+    opt.add_argument("--de_showall", action="store_true")
+    opt.add_argument("--de_brackets", action="store_true")
 
     # words list level
-    opt.add_argument('--no_word_blacklist', action="store_true")
-    opt.add_argument('--no_alpha_noise', action="store_true")
-    opt.add_argument('--check_confuse_word', action="store_true")
-    opt.add_argument('--yda_dedupl', action="store_true")
+    opt.add_argument("--no_word_blacklist", action="store_true")
+    opt.add_argument("--no_alpha_noise", action="store_true")
+    opt.add_argument("--check_confuse_word", action="store_true")
+    opt.add_argument("--yda_dedupl", action="store_true")
     # todo remedy http
 
 
-def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data, time_dict, cut,
-                    return_segmented=True) -> str:
+def utterance_clean(
+    opt,
+    file_id,
+    utterance,
+    tight_utter,
+    blacklist,
+    dirty_data,
+    time_dict,
+    cut,
+    return_segmented=True,
+) -> str:
     orig_utter = utterance[:]
     utterance = utterance.strip()
 
@@ -206,7 +249,7 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     # TODO check
     if "¡ 评论" in utterance:
-        utterance = utterance[:utterance.index("¡ 评论")]
+        utterance = utterance[: utterance.index("¡ 评论")]
         if not utterance:
             if dirty_data:
                 dirty_data["other"]["¡ 评论"].add(orig_utter)
@@ -217,7 +260,9 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             utterance = ""
 
     if utterance and opt.no_special_topic:
-        special_topic_word = str_level.de_str_blacklist(tight_utter, blacklist["special_topic"])
+        special_topic_word = str_level.de_str_blacklist(
+            tight_utter, blacklist["special_topic"]
+        )
         if special_topic_word:
             if dirty_data:
                 dirty_data["special_topic"][special_topic_word].add(orig_utter)
@@ -225,7 +270,9 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     if utterance and opt.no_str_blacklist:
         global MAX_LEN_STR_BLACKWORD
-        black_word = str_level.de_str_blacklist2(tight_utter, blacklist["str_blacklist"], MAX_LEN_STR_BLACKWORD)
+        black_word = str_level.de_str_blacklist2(
+            tight_utter, blacklist["str_blacklist"], MAX_LEN_STR_BLACKWORD
+        )
         if black_word:
             if dirty_data:
                 dirty_data["str_blacklist"][black_word].add(orig_utter)
@@ -297,7 +344,7 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         utterance = str_level.reduce_duplicated_phrase(utterance)
 
     if utterance and opt.de_emoji:
-        utterance = str_level.remove_emoji(utterance)
+        utterance = str_level.remove_emoji3(utterance)
         if not utterance:
             if dirty_data:
                 dirty_data["emoji"]["emoji"].add(orig_utter)
@@ -315,7 +362,8 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             no_phone_numbers=True,
             replace_with_url=" ",
             replace_with_email="</EMAIL>",
-            replace_with_phone_number="</PHONE>")
+            replace_with_phone_number="</PHONE>",
+        )
         if not utterance:
             if dirty_data:
                 dirty_data["other"]["cleantext"].add(orig_utter)
@@ -354,7 +402,14 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             utterance = ""
 
     ### word level
-    if not any([opt.no_alpha_noise, opt.check_confuse_word, opt.no_word_blacklist, opt.yda_dedupl]):
+    if not any(
+        [
+            opt.no_alpha_noise,
+            opt.check_confuse_word,
+            opt.no_word_blacklist,
+            opt.yda_dedupl,
+        ]
+    ):
         return utterance.strip()
 
     if cut:
