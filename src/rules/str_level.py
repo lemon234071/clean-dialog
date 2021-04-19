@@ -49,9 +49,7 @@ def contain_at(seq, tail_length=30):
     if flag is not None:
         return True
     r_at_idx = seq.rfind("@")
-    if r_at_idx > -1 and len(seq[r_at_idx:]) < tail_length:
-        return True
-    return False
+    return r_at_idx > -1 and len(seq[r_at_idx:]) < tail_length
 
 
 SINGLE_REPPOST_MENTION_REGEX = re.compile(r"(@+)(\S*?\s*?): *")
@@ -110,12 +108,12 @@ WEIBO_URL_REGEX = re.compile(
 
 def too_short(utter, length=2):
     temp = utter.replace(" ", "")
-    return True if len(temp) < length else False
+    return len(temp) < length
 
 
 def too_long(utter, length=1000):
     temp = utter.replace(" ", "")
-    return True if length < len(temp) else False
+    return length < len(temp)
 
 
 def remove_emoji(text):
@@ -131,13 +129,12 @@ MAX_LEN_EMOJI = max(len(x) for x in emoji.UNICODE_EMOJI.keys()) + 2
 def remove_emoji2(utter):
     blacklist = set(emoji.UNICODE_EMOJI.keys())
     # max_len = max(len(x) for x in blacklist)
-    all_gram = set(
-        [
-            utter[i : j + 1]
-            for i in range(len(utter))
-            for j in range(i, min(len(utter), i + MAX_LEN_EMOJI))
-        ]
-    )
+    all_gram = {
+        utter[i : j + 1]
+        for i in range(len(utter))
+        for j in range(i, min(len(utter), i + MAX_LEN_EMOJI))
+    }
+
     overlap = blacklist & all_gram
     if len(overlap) > 0:
         return overlap.pop()
@@ -182,9 +179,7 @@ def no_toupiao(utter):
 
 
 def no_specific_utter(utter):
-    if utter in NO_SPECIFIC:
-        return True
-    return False
+    return utter in NO_SPECIFIC
 
 
 # TODO speed up
@@ -197,13 +192,12 @@ def de_str_blacklist(utter, blacklist):
 
 def de_str_blacklist2(utter, blacklist, max_len=110):
     # max_len = max(len(x) for x in blacklist)
-    all_gram = set(
-        [
-            utter[i : j + 1]
-            for i in range(len(utter))
-            for j in range(i, min(len(utter), i + max_len))
-        ]
-    )
+    all_gram = {
+        utter[i : j + 1]
+        for i in range(len(utter))
+        for j in range(i, min(len(utter), i + max_len))
+    }
+
     overlap = blacklist & all_gram
     if len(overlap) > 0:
         return overlap.pop()
@@ -227,10 +221,12 @@ def de_word_blacklist(word_list, blacklist):
 
 def not_en(word_list, en_set):
     for word in word_list:
-        if word.encode("UTF-8").isalpha():
-            if not wordnet.synsets(word):
-                if word not in en_set:
-                    return word
+        if (
+            word.encode("UTF-8").isalpha()
+            and not wordnet.synsets(word)
+            and word not in en_set
+        ):
+            return word
     return None
 
 
@@ -244,7 +240,7 @@ def is_chinese_char(cp):
     # as is Japanese Hiragana and Katakana. Those alphabets are used to write
     # space-separated words, so they are not treated specially and handled
     # like the all of the other languages.
-    if (
+    return (
         (cp >= 0x4E00 and cp <= 0x9FFF)
         or (cp >= 0x3400 and cp <= 0x4DBF)  #
         or (cp >= 0x20000 and cp <= 0x2A6DF)  #
@@ -253,10 +249,7 @@ def is_chinese_char(cp):
         or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
         or (cp >= 0xF900 and cp <= 0xFAFF)
         or (cp >= 0x2F800 and cp <= 0x2FA1F)  #
-    ):  #
-        return True
-
-    return False
+    )
 
 
 def contains_Chinese(seq):
@@ -275,23 +268,19 @@ def bert_clean(text):
         """Checks whether `chars` is a control character."""
         # These are technically control characters but we count them as whitespace
         # characters.
-        if char == "\t" or char == "\n" or char == "\r":
+        if char in ["\t", "\n", "\r"]:
             return False
         cat = unicodedata.category(char)
-        if cat.startswith("C"):
-            return True
-        return False
+        return bool(cat.startswith("C"))
 
     def _is_whitespace(char):
         """Checks whether `chars` is a whitespace character."""
         # \t, \n, and \r are technically contorl characters but we treat them
         # as whitespace since they are generally considered as such.
-        if char == " " or char == "\t" or char == "\n" or char == "\r":
+        if char in [" ", "\t", "\n", "\r"]:
             return True
         cat = unicodedata.category(char)
-        if cat == "Zs":
-            return True
-        return False
+        return cat == "Zs"
 
     output = []
     for char in text:
@@ -394,7 +383,7 @@ def deduplicate_chars(seq_str, no_single=False):
 
     end = seven_i if n > 5 else len(seq_str)
     new_list.append(seq_str[last_i:end].strip())
-    if no_single and len(char_set) < 2 and 4 < len(seq_str):
+    if no_single and len(char_set) < 2 and len(seq_str) > 4:
         return ""
     return "".join(new_list) if new_list else seq_str
 
