@@ -181,6 +181,7 @@ def add_filter_args(argparser):
     opt.add_argument('--de_alpha_num', action="store_true")
     opt.add_argument('--de_phone', action="store_true")
     opt.add_argument('--de_qq', action="store_true")
+    opt.add_argument('--de_specific', action="store_true")
 
     # special files
     opt.add_argument('--de_showall', action="store_true")
