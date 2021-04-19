@@ -70,8 +70,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
                         if toupiao:
                             skip_utter = True
                             if dirty_data:
-                                dirty_data["other"]["toupiao"].add(utters[j])
-                                dirty_data["other"]["toupiao"].add(utters[j + 1])
+                                dirty_data["other"]["toupiao"].add(utters[j]+"\t\t"+utters[j + 1])
                             continue
 
                     tight_utter = utter.replace(" ", "")
@@ -202,21 +201,18 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     utterance = utterance.replace("alink", "")
     # TODO check
-    utterance = utterance.replace("{\\1c&H4080FF&}", "")
-    if not utterance:
-        if dirty_data:
-            dirty_data["other"]["{\\1c&H4080FF&}"].add(orig_utter)
 
     # TODO check
     if "¡ 评论" in utterance:
         utterance = utterance[:utterance.index("¡ 评论")]
-        if not utterance:
-            if dirty_data:
+        if dirty_data:
                 dirty_data["other"]["¡ 评论"].add(orig_utter)
 
     if utterance and opt.no_specific_utter:
         specific_utter = str_level.no_specific_utter(tight_utter)
         if specific_utter:
+            if dirty_data:
+                dirty_data["other"]["specific_utter"].add(orig_utter)
             utterance = ""
 
     if utterance and opt.no_special_topic:
@@ -235,78 +231,97 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             utterance = ""
 
     if utterance and opt.de_reply_tag:
+        len_before = len(utterance)
         utterance = str_level.REPLY_MENTION_REGEX.sub("", utterance).strip()
-        if not utterance:
-            if dirty_data:
-                dirty_data["other"]["de_reply_tag"].add(orig_utter)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["de_reply_tag"].add(orig_utter)
 
     # regex
     if utterance and opt.de_angle:
+        len_before = len(utterance)
         utterance = str_level.ANGLE_REGEX.sub("", utterance).strip()
-        if not utterance:
-            if dirty_data:
-                dirty_data["other"]["angle"].add(orig_utter)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["angle"].add(orig_utter)
 
     if utterance and opt.de_url:
+        len_before = len(utterance)
         utterance = str_level.URL_REGEX.sub(" ", utterance).strip()
-        if not utterance:
-            if dirty_data:
-                dirty_data["other"]["url"].add(orig_utter)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["url"].add(orig_utter)
 
     if utterance and opt.de_weibo_url:
+        len_before = len(utterance)
         utterance = str_level.WEIBO_URL_REGEX.sub(" ", utterance).strip()
-        if not utterance:
-            if dirty_data:
-                dirty_data["other"]["weibo_url"].add(orig_utter)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["weibo_url"].add(orig_utter)
 
     if utterance and opt.de_brackets:
+        len_before = len(utterance)
         utterance = str_level.BRACKETS_REGEX2.sub("", utterance).strip()
         utterance = str_level.BRACKETS_REGEX3.sub("", utterance).strip()
         if any([x for x in BRACKET if x in file_id]):
             utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
-        if not utterance:
-            if dirty_data:
-                dirty_data["emoji"]["weibo_emoji"].add(orig_utter)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["emoji"]["weibo_emoji"].add(orig_utter)
 
     if utterance and opt.de_hashtag:
+        len_before = len(utterance)
         utterance = str_level.HASHTAG_REGEX.sub("", utterance).strip()
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["emoji"]["hashtag"].add(orig_utter)
 
     if utterance and opt.de_emotion:
+        len_before = len(utterance)
         utterance = str_level.EMOTION_REGEX.sub("", utterance).strip()
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["emoji"]["emotion"].add(orig_utter)
 
     if utterance and opt.no_mention:
         if str_level.contain_at(utterance):
-            utterance = ""
             if dirty_data:
                 dirty_data["other"]["mention"].add(orig_utter)
+            utterance = ""
 
     if utterance and opt.de_mention:
+        len_before = len(utterance)
         # utterance = str_level.COMMON_MENTION_REGEX.sub("", utterance).strip()
         utterance = str_level.no_at(utterance).strip()
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["emoji"]["no_at"].add(orig_utter)
 
     if utterance and opt.de_single_repost_mention:
+        len_before = len(utterance)
         utterance = str_level.SINGLE_REPPOST_MENTION_REGEX.sub("", utterance).strip()
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["emoji"]["single_repost"].add(orig_utter)
 
     if utterance and opt.de_repost:
+        len_before = len(utterance)
         utterance = str_level.REPPOST_MENTION_REGEX.sub("", utterance).strip()
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["emoji"]["repost_mention"].add(orig_utter)
 
     if utterance and opt.de_showall and any([x for x in SHOWALL if x in file_id]):
+        len_before = len(utterance)
         utterance = str_level.ZHIHU_SHOW_ALL_REGEX.sub("", utterance).strip()
-        if not utterance:
-            if dirty_data:
-                dirty_data["other"]["showall"].add(orig_utter)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["showall"].add(orig_utter)
 
     if utterance and opt.de_duplicated:
+        len_before = len(utterance)
         utterance = str_level.reduce_duplicated_phrase(utterance)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["de_duplicated"].add(orig_utter)
 
     if utterance and opt.de_emoji:
-        utterance = str_level.remove_emoji(utterance)
-        if not utterance:
-            if dirty_data:
-                dirty_data["emoji"]["emoji"].add(orig_utter)
+        len_before = len(utterance)
+        utterance = str_level.remove_emoji3(utterance)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["emoji"]["emoji"].add(orig_utter)
 
     # clean-text lib
     if utterance and opt.cleantext_clean:
+        len_before = len(utterance)
         utterance = clean(
             utterance,
             fix_unicode=True,
@@ -319,9 +334,8 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             replace_with_url=" ",
             replace_with_email="</EMAIL>",
             replace_with_phone_number="</PHONE>")
-        if not utterance:
-            if dirty_data:
-                dirty_data["other"]["cleantext"].add(orig_utter)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["cleantext"].add(orig_utter)
 
     if utterance and opt.no_short:
         len_flag = str_level.too_short(utterance)
@@ -366,6 +380,8 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
 
     if utterance and opt.contain_zh:
         if not str_level.contains_Chinese(utterance):
+            if dirty_data:
+                dirty_data["other"]["contain_zh"].add(orig_utter)
             utterance = ""
 
     ### word level
