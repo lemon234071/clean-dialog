@@ -92,10 +92,7 @@ URL_REGEX = re.compile(
     # r"(?:\.(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)*"
     r"(?:\.(?:[a-z\\u00a1-\\uffff0-9]-?)*[a-z\\u00a1-\\uffff0-9]+)*"
     # TLD identifier
-    r"(?:\.(?:[a-z\\u00a1-\\uffff]{2,}))"
-    r"|"
-    r"(?:(localhost))"
-    r")"
+    r"(?:\.(?:[a-z\\u00a1-\\uffff]{2,}))" r"|" r"(?:(localhost))" r")"
     # port number
     r"(?::\d{2,5})?"
     # resource path
@@ -106,7 +103,9 @@ URL_REGEX = re.compile(
     flags=re.UNICODE | re.IGNORECASE,
 )
 
-WEIBO_URL_REGEX = re.compile(r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn?(\/[a-zA-Z0-9]{0,8})?)")
+WEIBO_URL_REGEX = re.compile(
+    r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn?(\/[a-zA-Z0-9]{0,8})?)"
+)
 
 
 def too_short(utter, length=2):
@@ -132,11 +131,42 @@ MAX_LEN_EMOJI = max(len(x) for x in emoji.UNICODE_EMOJI.keys()) + 2
 def remove_emoji2(utter):
     blacklist = set(emoji.UNICODE_EMOJI.keys())
     # max_len = max(len(x) for x in blacklist)
-    all_gram = set([utter[i:j + 1] for i in range(len(utter)) for j in range(i, min(len(utter), i + MAX_LEN_EMOJI))])
+    all_gram = set(
+        [
+            utter[i : j + 1]
+            for i in range(len(utter))
+            for j in range(i, min(len(utter), i + MAX_LEN_EMOJI))
+        ]
+    )
     overlap = blacklist & all_gram
     if len(overlap) > 0:
         return overlap.pop()
     return None
+
+
+def remove_emoji3(text):
+    emoji_regex = re.compile(
+        "["
+        "\U0001F600-\U0001F64F"
+        "\U0001F300-\U0001F5FF"
+        "\U0001F680-\U0001F6FF"
+        "\U0001F1E0-\U0001F1FF"
+        "\U00002500-\U00002BEF"
+        "\U0001f926-\U0001f937"
+        "\U00010000-\U0010ffff"
+        "\u2640-\u2642"
+        "\u2600-\u2B55"
+        "\u200d"
+        "\u23cf"
+        "\u23e9"
+        "\u231a"
+        "\ufe0f"
+        "\u3030"
+        "]+",
+        flags=re.UNICODE,
+    )
+    text = emoji_regex.sub(r"", text)
+    return text.strip()
 
 
 # 回归在即📣i灿们努力把数据做好💪🏻 选择选项toupiao,toupiao后选择分享我的观点及toupiao 🏅分享投票时请删除toupiao两个字🏅 🏅取消toupiao后 重新选其他选项 并重复以上步骤🏅 🌟tips:点进每个搜索词条并在该页面停留❗ 15秒以上才算有效哦! 【楷灿 气氛           参与了@terminatorhc楷>灿数据组 发起的【李楷灿指纹主唱 李楷灿无限魅力】,投给了"🌻"这个选项,你也快来表态吧~
@@ -167,7 +197,13 @@ def de_str_blacklist(utter, blacklist):
 
 def de_str_blacklist2(utter, blacklist, max_len=110):
     # max_len = max(len(x) for x in blacklist)
-    all_gram = set([utter[i:j + 1] for i in range(len(utter)) for j in range(i, min(len(utter), i + max_len))])
+    all_gram = set(
+        [
+            utter[i : j + 1]
+            for i in range(len(utter))
+            for j in range(i, min(len(utter), i + max_len))
+        ]
+    )
     overlap = blacklist & all_gram
     if len(overlap) > 0:
         return overlap.pop()
@@ -191,7 +227,7 @@ def de_word_blacklist(word_list, blacklist):
 
 def not_en(word_list, en_set):
     for word in word_list:
-        if word.encode('UTF-8').isalpha():
+        if word.encode("UTF-8").isalpha():
             if not wordnet.synsets(word):
                 if word not in en_set:
                     return word
@@ -209,14 +245,14 @@ def is_chinese_char(cp):
     # space-separated words, so they are not treated specially and handled
     # like the all of the other languages.
     if (
-            (cp >= 0x4E00 and cp <= 0x9FFF)
-            or (cp >= 0x3400 and cp <= 0x4DBF)  #
-            or (cp >= 0x20000 and cp <= 0x2A6DF)  #
-            or (cp >= 0x2A700 and cp <= 0x2B73F)  #
-            or (cp >= 0x2B740 and cp <= 0x2B81F)  #
-            or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
-            or (cp >= 0xF900 and cp <= 0xFAFF)
-            or (cp >= 0x2F800 and cp <= 0x2FA1F)  #
+        (cp >= 0x4E00 and cp <= 0x9FFF)
+        or (cp >= 0x3400 and cp <= 0x4DBF)  #
+        or (cp >= 0x20000 and cp <= 0x2A6DF)  #
+        or (cp >= 0x2A700 and cp <= 0x2B73F)  #
+        or (cp >= 0x2B740 and cp <= 0x2B81F)  #
+        or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
+        or (cp >= 0xF900 and cp <= 0xFAFF)
+        or (cp >= 0x2F800 and cp <= 0x2FA1F)  #
     ):  #
         return True
 
@@ -260,7 +296,7 @@ def bert_clean(text):
     output = []
     for char in text:
         cp = ord(char)
-        if cp == 0 or cp == 0xfffd or _is_control(char):
+        if cp == 0 or cp == 0xFFFD or _is_control(char):
             continue
         if _is_whitespace(char):
             output.append(" ")
@@ -290,9 +326,9 @@ def judge_duplicated_phrase(seq_str, times, length=2):
     n = len(seq_str)
     for k in range(n - (times + 1) * (length + 1)):
         for i in range(times - 1, (n - k) // times + 1):
-            a = seq_str[k: k + i]
+            a = seq_str[k : k + i]
             j = k + i
-            while j < n and i > length and seq_str[j:j + i] == a:
+            while j < n and i > length and seq_str[j : j + i] == a:
                 j += i
                 count += 1
                 if count > (times - 2):
@@ -306,12 +342,12 @@ def reduce_duplicated_phrase(seq_str, times=3, length=1):
         # l = 2,  t = 3
         i = 0
         while i + length * (times + 1) <= len(seq_str):
-            substr = seq_str[i:i + length]
+            substr = seq_str[i : i + length]
             j = i + length
-            while (j + length) <= len(seq_str) and seq_str[j:j + length] == substr:
+            while (j + length) <= len(seq_str) and seq_str[j : j + length] == substr:
                 j += length
             if (i + length * times) < j:
-                seq_str = seq_str[:i + length * times] + seq_str[j:]
+                seq_str = seq_str[: i + length * times] + seq_str[j:]
             i += 1
         length += 1
     return seq_str
@@ -331,9 +367,9 @@ def judge_yda_dupl(seq_list):
     if len(num_list) <= 1 / 3 * len(seq_list):
         return True
 
-    return 3 < len(num_list) < len(seq_list) and sum(
-        num_list[:3]
-    ) > 0.75 * len(seq_list)
+    return 3 < len(num_list) < len(seq_list) and sum(num_list[:3]) > 0.75 * len(
+        seq_list
+    )
 
 
 def deduplicate_chars(seq_str, no_single=False):
@@ -373,7 +409,7 @@ def de_specific(utter):
 # DUPLICATE_WORDS_REGEX = re.compile(r"(?P(?P\S-(\S.*\S))  (?:\s*(?P=item)) {1})   (?:\s*(?P=item)) {2,}")
 # DUPLICATE_WORDS_REGEX = re.compile(r"(.+?(?P<item>\S)(?:\s*(?P=item)))(?:\s*(?P=item)){2,}")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Testing the RegEx")
 
     test_text = "哈哈 sda83daj.jp 哈哈"
