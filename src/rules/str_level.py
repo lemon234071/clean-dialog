@@ -6,7 +6,7 @@ import unicodedata
 from nltk.corpus import wordnet
 
 NO_SPECIFIC = {"repost", "转发", "repostweibo", "分享图片"}
-DE_SPECIFIC = {"[图片]", "［图片］"}  # "为避免本题与原镜像问题所描述之收入差距过大,删除镜像问题",
+DE_SPECIFIC = {"[图片]", "［图片］", "{ n楷体 s14}", "{ }"}  # "为避免本题与原镜像问题所描述之收入差距过大,删除镜像问题",
 
 # "哈哈 sda83daj.jp 哈哈"
 ALPHA_NUM_REGEX = re.compile(r" [a-zA-Z0-9.]+ ")
@@ -66,7 +66,8 @@ REPLY_MENTION_REGEX = re.compile(r"回复 *@.*?: *")
 ZHIHU_SHOW_ALL_REGEX = re.compile(r"…* *显示全部\s*")
 
 URL_REGEX = re.compile(
-    r"(?:^|(?<![A-Za-z0-9\/\.]))"
+    # r"(?:^|(?<![A-Za-z0-9\/\.]))"
+    r"(?:^|(?<![A-Za-z0-9\/]))"
     # protocol identifier
     # r"(?:(?:https?|ftp)://)"  <-- alt?
     r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.))"
@@ -108,7 +109,12 @@ URL_REGEX = re.compile(
 
 WEIBO_URL_REGEX = re.compile(r"(?:(?:https?:?\/\/|ftp:\/\/|www\d{0,3}\.)t\.cn?(\/[a-zA-Z0-9]{0,8})?)")
 
+PHONE_REGEX = re.compile(r"\D\d{11}\D")
 
+QQ_REGEX = re.compile(r"[qQ]{2,}\d{5,12}\D")
+
+
+# func
 def too_short(utter, length=2):
     temp = utter.replace(" ", "")
     return True if len(temp) < length else False
@@ -376,7 +382,7 @@ def de_specific(utter):
 if __name__ == '__main__':
     print("Testing the RegEx")
 
-    test_text = "哈哈 sda83daj.jp 哈哈"
-    pat2 = re.compile(r" [a-zA-Z0-9.]+ ")
-    # 哈哈 XXX 哈哈
-    print(pat2.sub(" XXX ", test_text))
+    test_text = "哈哈qQq22222哈哈"
+    pat = re.compile(r"[qQ]{2,}\d{5,12}\D")
+    print(pat.sub("</Phone>", test_text))
+    print("over")

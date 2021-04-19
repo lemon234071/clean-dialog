@@ -179,6 +179,8 @@ def add_filter_args(argparser):
     opt.add_argument('--no_mention', action="store_true")
     opt.add_argument('--de_angle', action="store_true")
     opt.add_argument('--de_alpha_num', action="store_true")
+    opt.add_argument('--de_phone', action="store_true")
+    opt.add_argument('--de_qq', action="store_true")
 
     # special files
     opt.add_argument('--de_showall', action="store_true")
@@ -348,6 +350,18 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         utterance = str_level.de_specific(utterance)
         if dirty_data and len(utterance) < len_before:
             dirty_data["other"]["de_specific"].add(orig_utter)
+
+    if utterance and opt.de_phone:
+        len_before = len(utterance)
+        utterance = str_level.PHONE_REGEX.sub("</PHONE>", utterance).strip()
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["de_phone"].add(orig_utter)
+
+    if utterance and opt.de_qq:
+        len_before = len(utterance)
+        utterance = str_level.QQ_REGEX.sub(" ", utterance).strip()
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["de_qq"].add(orig_utter)
 
     if utterance and opt.contain_zh:
         if not str_level.contains_Chinese(utterance):
