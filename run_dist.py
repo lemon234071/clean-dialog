@@ -63,7 +63,8 @@ def main():
     blacklists = get_filter_set(args.tool_dir)
 
     # single process debug
-    # file_id, path, start, end, outpath = next(dataloader)
+    # dataloader = list(dataloader) # next(dataloader)
+    # file_id, path, start, end, outpath = dataloader[-1]
     # data = (path, start, end)
     # main_filter(args, file_id, data, blacklists, outpath, args.dirty_dir)
     # exit()

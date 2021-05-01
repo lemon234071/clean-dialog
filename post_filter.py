@@ -85,10 +85,13 @@ def seq_clean(seq, data_type="none"):
         pat = re.compile(r"…* *显示全部\s*")
         seq = pat.sub("", seq)
     elif data_type == "weibo_tang":
-        pat = re.compile(r"\[.*?\] *")
-        pat1 = re.compile(r"［.*?］ *")
-        seq = pat.sub("", seq)
-        seq = pat1.sub("", seq)
+        BRACKETS_REGEX = re.compile(r"\[.*?\] *")
+        BRACKETS_REGEX2 = re.compile(r"［.*?］ *")
+        # BRACKETS_REGEX3 = re.compile(r"【.*?】 *")
+        COLON_REGEX = re.compile(r"[:\s]{4,}")
+        seq = BRACKETS_REGEX.sub("", seq)
+        seq = BRACKETS_REGEX2.sub("", seq)
+        seq = COLON_REGEX.sub("", seq)
     if contain_at(seq):
         seq = ""
     if "尼玛" in seq:
@@ -98,7 +101,7 @@ def seq_clean(seq, data_type="none"):
     return seq
 
 
-def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
+def single_func(path, outpath, extra_func=False, min_length=1, max_length=256):
     try:
         new_data = []
         print("loading", path)
@@ -121,8 +124,8 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
 
                 seq = seq.replace(" ", "")
                 length = len(seq)
-                if length > max_length or length < 1:
-                    if len(new_dialog) > 1:
+                if length > max_length:
+                    if len(new_dialog) > 1:  # or length < min_length
                         # flag = len(new_dialog) == 2 and len(new_dialog[1].replace(" ", "")) < min_length
                         # if not flag:
                         new_data.append(new_dialog)
@@ -134,7 +137,7 @@ def single_func(path, outpath, extra_func=False, min_length=2, max_length=256):
                 # if not flag:
                 new_data.append(new_dialog)
         # save_jsonl(new_data, outpath)
-        new_data = ["\t\t".join(x[:j + 1]) for x in new_data for j in range(1, len(x))]
+        new_data = ["\t\t".join(x[:j + 1]) for x in new_data for j in range(1, len(x)) if len(x[j]) >= min_length]
         save_txt("\n".join(new_data), outpath)
         print("over", path)
     except Exception as e:
