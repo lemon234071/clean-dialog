@@ -70,7 +70,7 @@ def main_filter(opt, file_id, data, blacklist, out_path, dirty_dir, cut=True):
                         if toupiao:
                             skip_utter = True
                             if dirty_data:
-                                dirty_data["other"]["toupiao"].add(utters[j]+"\t\t"+utters[j + 1])
+                                dirty_data["other"]["toupiao"].add(utters[j] + "\t\t" + utters[j + 1])
                             continue
 
                     tight_utter = utter.replace(" ", "")
@@ -206,7 +206,7 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     if "¡ 评论" in utterance:
         utterance = utterance[:utterance.index("¡ 评论")]
         if dirty_data:
-                dirty_data["other"]["¡ 评论"].add(orig_utter)
+            dirty_data["other"]["¡ 评论"].add(orig_utter)
 
     if utterance and opt.no_specific_utter:
         specific_utter = str_level.no_specific_utter(tight_utter)
@@ -383,6 +383,9 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             if dirty_data:
                 dirty_data["other"]["contain_zh"].add(orig_utter)
             utterance = ""
+
+    if utterance and opt.de_emoji:
+        utterance = str_level.COLON_REGEX.sub("", utterance).strip()
 
     ### word level
     if not any([opt.no_alpha_noise, opt.check_confuse_word, opt.no_word_blacklist, opt.yda_dedupl]):

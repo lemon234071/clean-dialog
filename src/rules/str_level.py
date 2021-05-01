@@ -110,6 +110,8 @@ PHONE_REGEX = re.compile(r"\D\d{11}\D")
 
 QQ_REGEX = re.compile(r"[qQ]{2,}\d{5,12}\D")
 
+COLON_REGEX = re.compile(r"[:\s]{4,}")
+
 
 # func
 def too_short(utter, length=2):
@@ -136,7 +138,7 @@ def remove_emoji2(utter):
     blacklist = set(emoji.UNICODE_EMOJI.keys())
     # max_len = max(len(x) for x in blacklist)
     all_gram = {
-        utter[i : j + 1]
+        utter[i: j + 1]
         for i in range(len(utter))
         for j in range(i, min(len(utter), i + MAX_LEN_EMOJI))
     }
@@ -201,7 +203,7 @@ def de_str_blacklist(utter, blacklist):
 def de_str_blacklist2(utter, blacklist, max_len=110):
     # max_len = max(len(x) for x in blacklist)
     all_gram = {
-        utter[i : j + 1]
+        utter[i: j + 1]
         for i in range(len(utter))
         for j in range(i, min(len(utter), i + max_len))
     }
@@ -230,9 +232,9 @@ def de_word_blacklist(word_list, blacklist):
 def not_en(word_list, en_set):
     for word in word_list:
         if (
-            word.encode("UTF-8").isalpha()
-            and not wordnet.synsets(word)
-            and word not in en_set
+                word.encode("UTF-8").isalpha()
+                and not wordnet.synsets(word)
+                and word not in en_set
         ):
             return word
     return None
@@ -249,14 +251,14 @@ def is_chinese_char(cp):
     # space-separated words, so they are not treated specially and handled
     # like the all of the other languages.
     return (
-        (cp >= 0x4E00 and cp <= 0x9FFF)
-        or (cp >= 0x3400 and cp <= 0x4DBF)  #
-        or (cp >= 0x20000 and cp <= 0x2A6DF)  #
-        or (cp >= 0x2A700 and cp <= 0x2B73F)  #
-        or (cp >= 0x2B740 and cp <= 0x2B81F)  #
-        or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
-        or (cp >= 0xF900 and cp <= 0xFAFF)
-        or (cp >= 0x2F800 and cp <= 0x2FA1F)  #
+            (cp >= 0x4E00 and cp <= 0x9FFF)
+            or (cp >= 0x3400 and cp <= 0x4DBF)  #
+            or (cp >= 0x20000 and cp <= 0x2A6DF)  #
+            or (cp >= 0x2A700 and cp <= 0x2B73F)  #
+            or (cp >= 0x2B740 and cp <= 0x2B81F)  #
+            or (cp >= 0x2B820 and cp <= 0x2CEAF)  #
+            or (cp >= 0xF900 and cp <= 0xFAFF)
+            or (cp >= 0x2F800 and cp <= 0x2FA1F)  #
     )
 
 
@@ -323,9 +325,9 @@ def judge_duplicated_phrase(seq_str, times, length=2):
     n = len(seq_str)
     for k in range(n - (times + 1) * (length + 1)):
         for i in range(times - 1, (n - k) // times + 1):
-            a = seq_str[k : k + i]
+            a = seq_str[k: k + i]
             j = k + i
-            while j < n and i > length and seq_str[j : j + i] == a:
+            while j < n and i > length and seq_str[j: j + i] == a:
                 j += i
                 count += 1
                 if count > (times - 2):
@@ -339,9 +341,9 @@ def reduce_duplicated_phrase(seq_str, times=3, length=1):
         # l = 2,  t = 3
         i = 0
         while i + length * (times + 1) <= len(seq_str):
-            substr = seq_str[i : i + length]
+            substr = seq_str[i: i + length]
             j = i + length
-            while (j + length) <= len(seq_str) and seq_str[j : j + length] == substr:
+            while (j + length) <= len(seq_str) and seq_str[j: j + length] == substr:
                 j += length
             if (i + length * times) < j:
                 seq_str = seq_str[: i + length * times] + seq_str[j:]
@@ -409,7 +411,7 @@ def de_specific(utter):
 if __name__ == "__main__":
     print("Testing the RegEx")
 
-    test_text = "哈哈qQq22222哈哈"
-    pat = re.compile(r"[qQ]{2,}\d{5,12}\D")
-    print(pat.sub("</Phone>", test_text))
+    test_text = "宝贝又半夜不睡觉了: : : :"
+    pat = re.compile(r"[:\s]{4,}")
+    print(pat.sub("XXX", test_text))
     print("over")
