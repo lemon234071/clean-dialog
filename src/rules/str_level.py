@@ -112,6 +112,7 @@ QQ_REGEX = re.compile(r"[qQ]{2,}\d{5,12}\D")
 
 COLON_REGEX = re.compile(r"[:\s]{4,}")
 
+TM_REGEX = re.compile(r"([^a-zA-Z])(tm)([^a-zA-Z])", re.I)
 
 # func
 def too_short(utter, length=2):
@@ -411,7 +412,7 @@ def de_specific(utter):
 if __name__ == "__main__":
     print("Testing the RegEx")
 
-    test_text = "宝贝又半夜不睡觉了: : : :"
-    pat = re.compile(r"[:\s]{4,}")
-    print(pat.sub("XXX", test_text))
+    test_text = "谁tM跟你在Tm一起了"
+    pat = re.compile(r"([^a-zA-Z])(tm)([^a-zA-Z])", re.I)
+    print(pat.sub(lambda m: m.group(1) + m.group(3), test_text))
     print("over")

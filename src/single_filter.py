@@ -223,6 +223,7 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
             utterance = ""
 
     if utterance and opt.no_str_blacklist:
+        utterance = str_level.TM_REGEX.sub(lambda m: m.group(1) + m.group(3), utterance)
         global MAX_LEN_STR_BLACKWORD
         black_word = str_level.de_str_blacklist2(tight_utter, blacklist["str_blacklist"], MAX_LEN_STR_BLACKWORD)
         if black_word:
@@ -258,7 +259,7 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     if utterance and opt.de_brackets:
         len_before = len(utterance)
         utterance = str_level.BRACKETS_REGEX2.sub("", utterance).strip()
-        utterance = str_level.BRACKETS_REGEX3.sub("", utterance).strip()
+        # utterance = str_level.BRACKETS_REGEX3.sub("", utterance).strip()
         if any([x for x in BRACKET if x in file_id]):
             utterance = str_level.BRACKETS_REGEX.sub("", utterance).strip()
         if dirty_data and len(utterance) < len_before:

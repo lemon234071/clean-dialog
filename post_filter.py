@@ -80,15 +80,18 @@ def contain_at(seq, tail_length=30):
     return False
 
 
+TM_REGEX = re.compile(r"([^a-zA-Z])(tm)([^a-zA-Z])", re.I)
+BRACKETS_REGEX = re.compile(r"\[.*?\] *")
+BRACKETS_REGEX2 = re.compile(r"［.*?］ *")
+# BRACKETS_REGEX3 = re.compile(r"【.*?】 *")
+COLON_REGEX = re.compile(r"[:\s]{4,}")
+
+
 def seq_clean(seq, data_type="none"):
     if data_type == "zhihu":
         pat = re.compile(r"…* *显示全部\s*")
         seq = pat.sub("", seq)
     elif data_type == "weibo_tang":
-        BRACKETS_REGEX = re.compile(r"\[.*?\] *")
-        BRACKETS_REGEX2 = re.compile(r"［.*?］ *")
-        # BRACKETS_REGEX3 = re.compile(r"【.*?】 *")
-        COLON_REGEX = re.compile(r"[:\s]{4,}")
         seq = BRACKETS_REGEX.sub("", seq)
         seq = BRACKETS_REGEX2.sub("", seq)
         seq = COLON_REGEX.sub("", seq)
@@ -98,10 +101,11 @@ def seq_clean(seq, data_type="none"):
         seq = ""
     seq = seq.replace("[图片]", "")
     seq = seq.replace("［图片］", "")
+    seq = TM_REGEX.sub(lambda m: m.group(1) + m.group(3), seq)
     return seq
 
 
-def single_func(path, outpath, extra_func=False, min_length=1, max_length=256):
+def single_func(path, outpath, extra_func=False, min_length=5, max_length=200):
     try:
         new_data = []
         print("loading", path)
@@ -112,7 +116,7 @@ def single_func(path, outpath, extra_func=False, min_length=1, max_length=256):
         for dialog in tqdm.tqdm(data):
             new_dialog = []
             for seq in dialog:
-
+                seq = seq.replace(" ", "")
                 if extra_func:
                     if "zhihu" in path:
                         data_type = "zhihu"
@@ -122,9 +126,8 @@ def single_func(path, outpath, extra_func=False, min_length=1, max_length=256):
                         data_type = "none"
                     seq = seq_clean(seq, data_type)
 
-                seq = seq.replace(" ", "")
                 length = len(seq)
-                if length > max_length:
+                if length > max_length or "http" in seq:
                     if len(new_dialog) > 1:  # or length < min_length
                         # flag = len(new_dialog) == 2 and len(new_dialog[1].replace(" ", "")) < min_length
                         # if not flag:
