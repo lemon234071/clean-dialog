@@ -94,11 +94,11 @@ def seq_clean(seq, data_type="none"):
     elif data_type == "weibo_tang":
         seq = BRACKETS_REGEX.sub("", seq)
         seq = BRACKETS_REGEX2.sub("", seq)
-        seq = COLON_REGEX.sub("", seq)
     if contain_at(seq):
         seq = ""
     if "尼玛" in seq:
         seq = ""
+    seq = COLON_REGEX.sub("", seq)
     seq = seq.replace("[图片]", "")
     seq = seq.replace("［图片］", "")
     seq = seq.replace("我擦", "")
