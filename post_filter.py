@@ -101,6 +101,7 @@ def seq_clean(seq, data_type="none"):
         seq = ""
     seq = seq.replace("[图片]", "")
     seq = seq.replace("［图片］", "")
+    seq = seq.replace("我擦", "")
     seq = TM_REGEX.sub(lambda m: m.group(1) + m.group(3), seq)
     return seq
 
@@ -127,7 +128,7 @@ def single_func(path, outpath, extra_func=False, min_length=5, max_length=200):
                     seq = seq_clean(seq, data_type)
 
                 length = len(seq)
-                if length > max_length or "http" in seq:
+                if length > max_length or length < 1 or "http" in seq:
                     if len(new_dialog) > 1:  # or length < min_length
                         # flag = len(new_dialog) == 2 and len(new_dialog[1].replace(" ", "")) < min_length
                         # if not flag:
