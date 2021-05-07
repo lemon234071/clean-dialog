@@ -6,7 +6,7 @@ import unicodedata
 from nltk.corpus import wordnet
 
 NO_SPECIFIC = {"repost", "转发", "repostweibo", "分享图片"}
-DE_SPECIFIC = {"[图片]", "［图片］", "{ n楷体 s14}", "{ }", "{\\1c&H4080FF&}", "我擦"}
+DE_SPECIFIC = {"[图片]", "［图片］", "{ n楷体 s14}", "{ }", "{\\1c&H4080FF&}", "我擦", "\u200b"}
 
 # "哈哈 sda83daj.jp 哈哈"
 ALPHA_NUM_REGEX = re.compile(r" [a-zA-Z0-9.]+ ")

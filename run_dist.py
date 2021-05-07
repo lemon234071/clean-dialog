@@ -64,7 +64,7 @@ def main():
 
     # single process debug
     # dataloader = list(dataloader) # next(dataloader)
-    # file_id, path, start, end, outpath = dataloader[-1]
+    # file_id, path, start, end, outpath = dataloader[-2]
     # data = (path, start, end)
     # main_filter(args, file_id, data, blacklists, outpath, args.dirty_dir)
     # exit()

@@ -200,7 +200,6 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     utterance = utterance.strip()
 
     utterance = utterance.replace("alink", "")
-    # TODO check
 
     # TODO check
     if "¡ 评论" in utterance:
@@ -213,22 +212,6 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         if specific_utter:
             if dirty_data:
                 dirty_data["other"]["specific_utter"].add(orig_utter)
-            utterance = ""
-
-    if utterance and opt.no_special_topic:
-        special_topic_word = str_level.de_str_blacklist(tight_utter, blacklist["special_topic"])
-        if special_topic_word:
-            if dirty_data:
-                dirty_data["special_topic"][special_topic_word].add(orig_utter)
-            utterance = ""
-
-    if utterance and opt.no_str_blacklist:
-        utterance = str_level.TM_REGEX.sub(lambda m: m.group(1) + m.group(3), utterance)
-        global MAX_LEN_STR_BLACKWORD
-        black_word = str_level.de_str_blacklist2(tight_utter, blacklist["str_blacklist"], MAX_LEN_STR_BLACKWORD)
-        if black_word:
-            if dirty_data:
-                dirty_data["str_blacklist"][black_word].add(orig_utter)
             utterance = ""
 
     if utterance and opt.de_reply_tag:
@@ -388,10 +371,26 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
     if utterance and opt.de_emoji:
         utterance = str_level.COLON_REGEX.sub("", utterance).strip()
 
-    ### word level
+    if utterance and opt.no_special_topic:
+        special_topic_word = str_level.de_str_blacklist(tight_utter, blacklist["special_topic"])
+        if special_topic_word:
+            if dirty_data:
+                dirty_data["special_topic"][special_topic_word].add(orig_utter)
+            utterance = ""
+
+    if utterance and opt.no_str_blacklist:
+        utterance = str_level.TM_REGEX.sub(lambda m: m.group(1) + m.group(3), utterance)
+        global MAX_LEN_STR_BLACKWORD
+        black_word = str_level.de_str_blacklist2(tight_utter, blacklist["str_blacklist"], MAX_LEN_STR_BLACKWORD)
+        if black_word:
+            if dirty_data:
+                dirty_data["str_blacklist"][black_word].add(orig_utter)
+            utterance = ""
+
     if not any([opt.no_alpha_noise, opt.check_confuse_word, opt.no_word_blacklist, opt.yda_dedupl]):
         return utterance.strip()
 
+    ### word level
     if cut:
         word_list = list(jieba.cut(utterance))
     else:
