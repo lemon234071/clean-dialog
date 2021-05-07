@@ -121,7 +121,7 @@ def single_func(path, outpath, extra_func=False, min_length=5, max_length=200):
                 if extra_func:
                     if "zhihu" in path:
                         data_type = "zhihu"
-                    elif "weibo_tang" in path:
+                    elif "weibo_tang" in path or "weibo_sunhao" in path:
                         data_type = "weibo_tang"
                     else:
                         data_type = "none"
