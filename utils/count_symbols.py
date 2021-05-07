@@ -1,6 +1,7 @@
 import os
 import time
 import re
+import random
 import collections
 import json
 from multiprocessing import Pool
@@ -47,10 +48,11 @@ def single_func(path):
             if no_emoji_regex.search(dialog):
                 sta["no_emoji"] += 1
                 continue
-            dialog_set = set(list(dialog))
-            overlap = symbol_vocab & dialog_set
-            if len(overlap) > 0:
-                sta["symbol_list"] += 1
+            dialog_set = list(dialog)
+            for word in dialog_set:
+                if word in symbol_vocab:
+                    sta[word] += 1
+                    break
 
         print("over {}".format(path))
         return sta
