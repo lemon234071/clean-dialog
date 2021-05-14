@@ -291,52 +291,11 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         if dirty_data and len(utterance) < len_before:
             dirty_data["other"]["showall"].add(orig_utter)
 
-    if utterance and opt.de_duplicated:
-        len_before = len(utterance)
-        utterance = str_level.reduce_duplicated_phrase(utterance)
-        if dirty_data and len(utterance) < len_before:
-            dirty_data["other"]["de_duplicated"].add(orig_utter)
-
     if utterance and opt.de_emoji:
         len_before = len(utterance)
         utterance = str_level.remove_emoji3(utterance)
         if dirty_data and len(utterance) < len_before:
             dirty_data["emoji"]["emoji"].add(orig_utter)
-
-    # clean-text lib
-    if utterance and opt.cleantext_clean:
-        len_before = len(utterance)
-        utterance = clean(
-            utterance,
-            fix_unicode=True,
-            to_ascii=False,
-            normalize_whitespace=True,
-            no_line_breaks=True,
-            no_urls=False,
-            no_emails=True,
-            no_phone_numbers=True,
-            replace_with_url=" ",
-            replace_with_email="</EMAIL>",
-            replace_with_phone_number="</PHONE>")
-        if dirty_data and len(utterance) < len_before:
-            dirty_data["other"]["cleantext"].add(orig_utter)
-
-    if utterance and opt.no_short:
-        len_flag = str_level.too_short(utterance)
-        if len_flag:
-            if dirty_data:
-                dirty_data["other"]["short"].add(orig_utter)
-            utterance = ""
-
-    if utterance and opt.no_long:
-        len_flag = str_level.too_long(utterance)
-        if len_flag:
-            if dirty_data:
-                dirty_data["other"]["long"].add(orig_utter)
-            utterance = ""
-
-    if utterance and opt.bert_clean:
-        utterance = str_level.bert_clean(utterance)
 
     if utterance and opt.de_alpha_num:
         len_before = len(utterance)
@@ -362,14 +321,35 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         if dirty_data and len(utterance) < len_before:
             dirty_data["other"]["de_qq"].add(orig_utter)
 
+    # clean-text lib
+    if utterance and opt.cleantext_clean:
+        len_before = len(utterance)
+        utterance = clean(
+            utterance,
+            fix_unicode=True,
+            to_ascii=False,
+            normalize_whitespace=True,
+            no_line_breaks=True,
+            no_urls=False,
+            no_emails=True,
+            no_phone_numbers=True,
+            replace_with_url=" ",
+            replace_with_email="</EMAIL>",
+            replace_with_phone_number="</PHONE>")
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["cleantext"].add(orig_utter)
+
+    if utterance and opt.bert_clean:
+        utterance = str_level.bert_clean(utterance)
+
+    if utterance and opt.de_emoji:
+        utterance = str_level.COLON_REGEX.sub("", utterance).strip()
+
     if utterance and opt.contain_zh:
         if not str_level.contains_Chinese(utterance):
             if dirty_data:
                 dirty_data["other"]["contain_zh"].add(orig_utter)
             utterance = ""
-
-    if utterance and opt.de_emoji:
-        utterance = str_level.COLON_REGEX.sub("", utterance).strip()
 
     if utterance and opt.no_special_topic:
         special_topic_word = str_level.de_str_blacklist(tight_utter, blacklist["special_topic"])
@@ -385,6 +365,26 @@ def utterance_clean(opt, file_id, utterance, tight_utter, blacklist, dirty_data,
         if black_word:
             if dirty_data:
                 dirty_data["str_blacklist"][black_word].add(orig_utter)
+            utterance = ""
+
+    if utterance and opt.de_duplicated:
+        len_before = len(utterance)
+        utterance = str_level.reduce_duplicated_phrase(utterance)
+        if dirty_data and len(utterance) < len_before:
+            dirty_data["other"]["de_duplicated"].add(orig_utter)
+
+    if utterance and opt.no_short:
+        len_flag = str_level.too_short(utterance)
+        if len_flag:
+            if dirty_data:
+                dirty_data["other"]["short"].add(orig_utter)
+            utterance = ""
+
+    if utterance and opt.no_long:
+        len_flag = str_level.too_long(utterance)
+        if len_flag:
+            if dirty_data:
+                dirty_data["other"]["long"].add(orig_utter)
             utterance = ""
 
     if not any([opt.no_alpha_noise, opt.check_confuse_word, opt.no_word_blacklist, opt.yda_dedupl]):
